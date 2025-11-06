@@ -17,6 +17,21 @@ def extract_project_name(cwd: str) -> str:
     return Path(cwd).name
 
 
+def extract_session_id_from_filename(file_path: Path) -> str:
+    """
+    Extract session ID from .jsonl filename.
+
+    Claude Code uses the filename (not content's sessionId field) for resuming.
+    Some files have mismatched session IDs between filename and content.
+
+    @param file_path Path to session file
+    @returns Session ID extracted from filename (without .jsonl extension)
+    @complexity O(1)
+    @pure true
+    """
+    return file_path.stem  # filename without extension
+
+
 def is_boilerplate_message(text: str) -> bool:
     """
     Check if message is Claude Code boilerplate (continuation or commands).
@@ -263,7 +278,8 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
 
     first_data, first_msg = parse_first_user_message(file_path)
 
-    session_id = first_data["sessionId"]
+    # Extract session ID from filename (not content) since Claude Code uses filename for resuming
+    session_id = extract_session_id_from_filename(file_path)
     cwd = first_data["cwd"]
     project_name = extract_project_name(cwd)
     git_branch = first_data.get("gitBranch", "")
