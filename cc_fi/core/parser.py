@@ -91,9 +91,10 @@ def extract_all_user_messages(file_path: Path) -> str:
     - Assistant messages
 
     Messages are joined with " | " separator for fzf deep search.
+    Newlines are replaced with spaces to keep content on single line.
 
     @param file_path Path to session JSONL file
-    @returns All user messages joined with " | " separator
+    @returns All user messages joined with " | " separator (single line)
     @complexity O(n) where n is lines in session file
     @pure false - reads filesystem
     """
@@ -131,7 +132,9 @@ def extract_all_user_messages(file_path: Path) -> str:
                 if not text.strip():
                     continue
 
-                messages.append(text.strip())
+                # Replace newlines with spaces for single-line fzf display
+                text_single_line = " ".join(text.split())
+                messages.append(text_single_line)
 
     except (FileNotFoundError, PermissionError):
         return ""
