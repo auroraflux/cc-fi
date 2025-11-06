@@ -1,6 +1,19 @@
 # cc-fi
 
-**Claude Code Session Finder** - Fast, interactive browser for finding and resuming Claude Code sessions across all directories.
+Ever done this?
+
+```
+❯ claude -r
+No conversations found to resume
+```
+
+*"Ah crap, what directory did I run that Claude Code session in again!?"*
+
+`cc-fi` fixes that. It's a fast, fuzzy search tool for finding your Claude Code sessions across your entire filesystem. Search through conversation history, jump straight into any session, and get warned if the directory's moved since you last worked there.
+
+I built this with Claude Code because I kept losing track of my own sessions. It's vibe-coded, rough around the edges, and makes zero claims about being professional software. But it works really well for what I need.
+
+Take it, break it, extend it. Whatever you want.
 
 ## Features
 
