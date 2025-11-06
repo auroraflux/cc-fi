@@ -32,6 +32,36 @@ def extract_session_id_from_filename(file_path: Path) -> str:
     return file_path.stem  # filename without extension
 
 
+def extract_cwd_from_storage_path(file_path: Path) -> str:
+    """
+    Extract the original working directory from the session file's storage location.
+
+    Claude Code stores sessions in directories named after the cwd where the session started.
+    For example:
+    - Session in /home/user → stored in ~/.claude/projects/-home-user/
+    - Session in /home/user/project → stored in ~/.claude/projects/-home-user-project/
+
+    The cwd field INSIDE the file content can differ if the user changed directories during the session.
+    To correctly resume a session, we must use the directory where the file is STORED, not the cwd
+    from the file content.
+
+    @param file_path Path to session file
+    @returns Working directory path derived from storage location
+    @complexity O(1)
+    @pure true
+    """
+    # Get parent directory name (e.g., "-home-user-project")
+    storage_dir = file_path.parent.name
+
+    # Convert directory name back to path by replacing leading dash and remaining dashes with slashes
+    # "-home-user-project" -> "/home/user/project"
+    if storage_dir.startswith("-"):
+        return "/" + storage_dir[1:].replace("-", "/")
+
+    # Fallback: if directory name doesn't start with dash, return as-is
+    return storage_dir
+
+
 def is_boilerplate_message(text: str) -> bool:
     """
     Check if message is Claude Code boilerplate (continuation or commands).
@@ -280,8 +310,12 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
 
     # Extract session ID from filename (not content) since Claude Code uses filename for resuming
     session_id = extract_session_id_from_filename(file_path)
-    cwd = first_data["cwd"]
+
+    # Extract cwd from storage location (not file content) since Claude Code looks for sessions
+    # based on where they're stored, not where the user might have cd'd during the session
+    cwd = extract_cwd_from_storage_path(file_path)
     project_name = extract_project_name(cwd)
+
     git_branch = first_data.get("gitBranch", "")
     timestamp_str = first_data["timestamp"]
     timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
