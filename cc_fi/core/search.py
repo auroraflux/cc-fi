@@ -7,6 +7,11 @@ def matches_search_term(session: SessionData, search_term: str) -> bool:
     """
     Check if session matches search term (case insensitive).
 
+    Searches across all indexed fields including:
+    - Metadata: session_id, cwd, project_name, git_branch
+    - Messages: first_message, last_message (visible in table)
+    - Deep content: full_content (all user messages in conversation)
+
     @param session SessionData to check
     @param search_term Search string (case insensitive)
     @returns True if any field contains search term
@@ -22,6 +27,7 @@ def matches_search_term(session: SessionData, search_term: str) -> bool:
         session.git_branch,
         session.first_message,
         session.last_message,
+        session.full_content,  # Deep search across all user messages
     ]
 
     for field in fields_to_search:
