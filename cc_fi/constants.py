@@ -32,6 +32,7 @@ COLOR_GREEN = "\033[32m"
 COLOR_BLUE = "\033[34m"
 COLOR_YELLOW = "\033[33m"
 COLOR_GRAY = "\033[90m"
+COLOR_RED = "\033[31m"  # For fuzzy match highlighting
 COLOR_BOLD = "\033[1m"
 COLOR_RESET = "\033[0m"
 

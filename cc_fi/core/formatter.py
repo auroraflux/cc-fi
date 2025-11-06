@@ -14,6 +14,7 @@ from cc_fi.constants import (
     COLOR_LAVENDER,
     COLOR_MAUVE,
     COLOR_OVERLAY0,
+    COLOR_RED,
     COLOR_RESET,
     COLOR_YELLOW,
     ICON_PROJECT,
@@ -91,6 +92,58 @@ def normalize_whitespace(text: str) -> str:
     return normalized.strip()
 
 
+def highlight_fuzzy_matches(text: str, query: str) -> str:
+    """
+    Highlight fuzzy matches of query in text with red color (fzf-style).
+
+    Fuzzy matching finds query characters in order but not necessarily consecutive.
+    Example: "test" fuzzy matches "template string" by finding t-e-s-t in order.
+
+    @param text Text to search in
+    @param query Search query
+    @returns Text with fuzzy matches highlighted in red
+    @complexity O(n*m) where n is text length, m is query length
+    @pure true
+    """
+    if not query or not text:
+        return text
+
+    query_lower = query.lower()
+    text_lower = text.lower()
+
+    # Find positions of fuzzy matches (greedy: first occurrence of each char)
+    matched_positions = []
+    search_pos = 0
+
+    for query_char in query_lower:
+        # Find next occurrence of this character
+        pos = text_lower.find(query_char, search_pos)
+        if pos == -1:
+            # No complete fuzzy match found, return text unchanged
+            return text
+        matched_positions.append(pos)
+        search_pos = pos + 1
+
+    # Build highlighted string by inserting ANSI color codes
+    if not matched_positions:
+        return text
+
+    result = []
+    last_pos = 0
+
+    for pos in matched_positions:
+        # Add text before match
+        result.append(text[last_pos:pos])
+        # Add highlighted character (red + bold for visibility)
+        result.append(f"{COLOR_RED}{COLOR_BOLD}{text[pos]}{COLOR_RESET}")
+        last_pos = pos + 1
+
+    # Add remaining text
+    result.append(text[last_pos:])
+
+    return "".join(result)
+
+
 def truncate_message(message: str, max_length: int) -> str:
     """
     Truncate message to max length with ellipsis.
@@ -134,6 +187,33 @@ def wrap_colored_text(text: str, color: str, width: int) -> str:
     colored_lines = [f"{color}{line}{COLOR_RESET}" for line in wrapped_lines]
 
     return "\n".join(colored_lines)
+
+
+def wrap_text_preserve_colors(text: str, width: int) -> str:
+    """
+    Wrap text to specified width while preserving existing ANSI color codes.
+
+    Used for text that already has fuzzy match highlighting or other colors.
+    Does not add a base color - preserves whatever colors are in the text.
+
+    @param text Text to wrap (may contain ANSI color codes)
+    @param width Maximum width per line
+    @returns Multi-line string with existing color codes preserved
+    @complexity O(n) where n is text length
+    @pure true
+    """
+    normalized = normalize_whitespace(text)
+
+    # Wrap the text - textwrap doesn't count ANSI codes toward width
+    # so this works correctly even with color codes in the text
+    wrapped_lines = textwrap.wrap(
+        normalized,
+        width=width,
+        break_long_words=False,
+        break_on_hyphens=False
+    )
+
+    return "\n".join(wrapped_lines)
 
 
 def format_timestamp(dt: datetime) -> str:
@@ -268,12 +348,13 @@ def format_instruction_header() -> str:
     return f"{instructions}\n{separator}"
 
 
-def format_fzf_preview(session: SessionData) -> str:
+def format_fzf_preview(session: SessionData, query: str = "") -> str:
     """
-    Format session details for fzf preview pane with NerdFont icons.
+    Format session details for fzf preview pane with NerdFont icons and fuzzy match highlighting.
     Layout matches table order: Project, Path, Time, Recent, First, Session ID, Message count.
 
     @param session SessionData to format
+    @param query Search query for fuzzy match highlighting
     @returns Multi-line formatted string
     @complexity O(n) where n is message length
     @pure false - reads terminal size
@@ -286,21 +367,34 @@ def format_fzf_preview(session: SessionData) -> str:
     short_path = shorten_path(session.cwd)
     time_str = format_timestamp(session.timestamp)
 
-    # Use full message fields (already truncated to 400 chars in parser)
-    # Wrap the messages to terminal width with color
-    first_msg_wrapped = wrap_colored_text(session.first_message_full, COLOR_LAVENDER, terminal_width)
-    last_msg_wrapped = wrap_colored_text(session.last_message_full, COLOR_MAUVE, terminal_width)
+    # Apply fuzzy match highlighting if query present
+    if query:
+        project_display = highlight_fuzzy_matches(session.project_name, query)
+        path_display = highlight_fuzzy_matches(short_path, query)
+        branch_display = highlight_fuzzy_matches(session.git_branch, query) if session.git_branch else ""
+
+        # Highlight messages then add base color
+        first_highlighted = highlight_fuzzy_matches(session.first_message_full, query)
+        last_highlighted = highlight_fuzzy_matches(session.last_message_full, query)
+        first_msg_wrapped = wrap_text_preserve_colors(first_highlighted, terminal_width)
+        last_msg_wrapped = wrap_text_preserve_colors(last_highlighted, terminal_width)
+    else:
+        project_display = session.project_name
+        path_display = short_path
+        branch_display = session.git_branch if session.git_branch else ""
+        first_msg_wrapped = wrap_colored_text(session.first_message_full, COLOR_LAVENDER, terminal_width)
+        last_msg_wrapped = wrap_colored_text(session.last_message_full, COLOR_MAUVE, terminal_width)
 
     # Start with project, path, time (matching table order)
     # Values are colored to match their header color for easy visual correlation
     lines = [
-        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{session.project_name}{COLOR_RESET}",
-        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{short_path}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{project_display}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{path_display}{COLOR_RESET}",
     ]
 
     # Add branch if it exists (between path and time)
     if session.git_branch:
-        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{session.git_branch}{COLOR_RESET}")
+        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{branch_display}{COLOR_RESET}")
 
     # Continue with time, recent, first (matching table order)
     lines.extend(
@@ -377,7 +471,7 @@ def extract_match_context(text: str, match_start: int, match_end: int, context_c
 
 def format_search_preview(session: "SessionData", query: str) -> str:
     """
-    Format preview pane with search-aware context showing matching snippets.
+    Format preview pane with search-aware context showing matching snippets and fuzzy highlighting.
 
     @param session SessionData to format
     @param query Search query from fzf
@@ -399,14 +493,19 @@ def format_search_preview(session: "SessionData", query: str) -> str:
     short_path = shorten_path(session.cwd)
     time_str = format_timestamp(session.timestamp)
 
+    # Apply fuzzy highlighting to metadata
+    project_display = highlight_fuzzy_matches(session.project_name, query)
+    path_display = highlight_fuzzy_matches(short_path, query)
+    branch_display = highlight_fuzzy_matches(session.git_branch, query) if session.git_branch else ""
+
     # Start with metadata (always shown)
     lines = [
-        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{session.project_name}{COLOR_RESET}",
-        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{short_path}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{project_display}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{path_display}{COLOR_RESET}",
     ]
 
     if session.git_branch:
-        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{session.git_branch}{COLOR_RESET}")
+        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{branch_display}{COLOR_RESET}")
 
     lines.extend([
         f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {COLOR_YELLOW}{time_str}{COLOR_RESET}",
@@ -421,18 +520,21 @@ def format_search_preview(session: "SessionData", query: str) -> str:
     matches = find_search_matches(session.full_content, query)
 
     if not matches:
-        # No deep matches found, show standard messages
+        # No deep matches found, show standard messages with fuzzy highlighting
+        first_highlighted = highlight_fuzzy_matches(session.first_message_full, query)
+        last_highlighted = highlight_fuzzy_matches(session.last_message_full, query)
+
         lines.extend([
             f"{COLOR_OVERLAY0}No deep matches found{COLOR_RESET}",
             "",
             f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent Msg:{COLOR_RESET}",
-            wrap_colored_text(session.last_message_full, COLOR_MAUVE, terminal_width),
+            wrap_text_preserve_colors(last_highlighted, terminal_width),
             "",
             f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First Msg:{COLOR_RESET}",
-            wrap_colored_text(session.first_message_full, COLOR_LAVENDER, terminal_width),
+            wrap_text_preserve_colors(first_highlighted, terminal_width),
         ])
     else:
-        # Show matching snippets
+        # Show matching snippets with fuzzy highlighting
         total_matches = len(matches)
         display_count = min(MAX_PREVIEW_MATCHES, total_matches)
 
@@ -443,12 +545,15 @@ def format_search_preview(session: "SessionData", query: str) -> str:
 
         lines.append("")
 
-        # Show first N matches with context
+        # Show first N matches with context and fuzzy highlighting
         for i, (start, end) in enumerate(matches[:MAX_PREVIEW_MATCHES]):
             context = extract_match_context(session.full_content, start, end, MATCH_CONTEXT_CHARS)
 
+            # Apply fuzzy highlighting to context
+            context_highlighted = highlight_fuzzy_matches(context, query)
+
             # Wrap context to terminal width
-            wrapped = wrap_colored_text(context, COLOR_MAUVE, terminal_width - 15)
+            wrapped = wrap_text_preserve_colors(context_highlighted, terminal_width - 15)
 
             # Add match number prefix
             first_line = wrapped.split("\n")[0] if "\n" in wrapped else wrapped
@@ -470,19 +575,19 @@ def format_search_preview(session: "SessionData", query: str) -> str:
 
 def format_preview_with_query(session: "SessionData", query: str = "") -> str:
     """
-    Format preview pane, switching between standard and search mode.
+    Format preview pane with fuzzy match highlighting, switching between standard and search mode.
 
     @param session SessionData to format
-    @param query Optional search query from fzf
-    @returns Multi-line formatted preview string
+    @param query Optional search query from fzf for fuzzy highlighting
+    @returns Multi-line formatted preview string with highlighted matches
     @complexity O(n) where n is content size
     @pure false - reads terminal size
     """
     from cc_fi.models.session import SessionData
 
     if query and query.strip():
-        # Search mode: show matching snippets
+        # Search mode: show matching snippets with fuzzy highlighting
         return format_search_preview(session, query.strip())
     else:
-        # Browse mode: show standard preview
-        return format_fzf_preview(session)
+        # Browse mode: show standard preview (no highlighting when no query)
+        return format_fzf_preview(session, "")
