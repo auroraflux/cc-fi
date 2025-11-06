@@ -70,6 +70,8 @@ def select_directory_with_fzf() -> str | None:
     """
     Use fzf to interactively select a directory.
 
+    Streams fd results to fzf for immediate display (no loading delay).
+
     @returns Selected directory path or None if cancelled
     @complexity O(n) where n is number of directories
     @pure false - launches subprocess
@@ -81,49 +83,54 @@ def select_directory_with_fzf() -> str | None:
     home = Path.home()
 
     # Build fd command to list directories under home
-    # Limit depth to 4 to keep it reasonable
-    cmd = [
+    # Limit depth to 3 for better performance
+    fd_cmd = [
         "fd",
         "--type", "d",
-        "--max-depth", "4",
+        "--max-depth", "3",
         "--base-directory", str(home),
         ".",
     ]
 
+    # Build fzf command
+    fzf_cmd = [
+        "fzf",
+        "--prompt", "Select directory: ",
+        "--height", "50%",
+        "--layout", "reverse",
+        "--preview", "eza -la ~/{} 2>/dev/null || ls -la ~/{} 2>/dev/null | head -20",
+        "--preview-window", "right:50%",
+    ]
+
     try:
-        # Get directory list
-        fd_result = subprocess.run(
-            cmd,
-            capture_output=True,
+        # Pipe fd directly to fzf (streaming - fzf appears immediately)
+        fd_proc = subprocess.Popen(
+            fd_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            check=False,
         )
 
-        if fd_result.returncode != 0:
-            return None
-
-        # Pipe to fzf for selection
-        fzf_cmd = [
-            "fzf",
-            "--prompt", "Select directory: ",
-            "--height", "50%",
-            "--layout", "reverse",
-            "--preview", "ls -la ~/{} 2>/dev/null | head -20",
-            "--preview-window", "right:50%",
-        ]
-
-        fzf_result = subprocess.run(
+        fzf_proc = subprocess.Popen(
             fzf_cmd,
-            input=fd_result.stdout,
-            capture_output=True,
+            stdin=fd_proc.stdout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            check=False,
         )
 
-        if fzf_result.returncode != 0:
+        # Close fd stdout in parent to allow fd to receive SIGPIPE if fzf exits
+        if fd_proc.stdout:
+            fd_proc.stdout.close()
+
+        # Wait for fzf to complete
+        fzf_output, _ = fzf_proc.communicate()
+
+        # Check return code
+        if fzf_proc.returncode != 0:
             return None
 
-        selected = fzf_result.stdout.strip()
+        selected = fzf_output.strip()
         if selected:
             # Return full path
             return str(home / selected)
@@ -184,7 +191,7 @@ def handle_interactive_mode() -> None:
 
                 if choice == '1':
                     # Use fzf to select directory
-                    print("\nBrowsing directories (type to search, ESC to cancel)...")
+                    print("\nLaunching directory browser (type to search, ESC to cancel)...")
                     alt_dir = select_directory_with_fzf()
 
                     if alt_dir:
