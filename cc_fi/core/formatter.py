@@ -334,7 +334,7 @@ def format_instruction_header() -> str:
     """
     Format instruction header with keyboard shortcuts for interactive mode.
 
-    @returns Two-line string: instructions + note about search
+    @returns Two-line string: instructions + search note
     @complexity O(1)
     @pure true
     """
@@ -345,8 +345,8 @@ def format_instruction_header() -> str:
         f"↵ {COLOR_CATPPUCCIN_BLUE}Select{COLOR_OVERLAY0} | "
         f"Esc {COLOR_CATPPUCCIN_BLUE}Cancel{COLOR_RESET}"
     )
-    # Note about search limitations
-    search_note = f"{COLOR_OVERLAY0}Searching visible content only. Use {COLOR_CATPPUCCIN_BLUE}cc-fi -l{COLOR_OVERLAY0} for deep content search.{COLOR_RESET}"
+    # Note about search scope
+    search_note = f"{COLOR_OVERLAY0}Searching across conversation content (first 500 chars){COLOR_RESET}"
 
     return f"{instructions}\n{search_note}"
 

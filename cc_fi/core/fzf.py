@@ -25,20 +25,19 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: session_id|formatted_row
+    Format: hidden_session_id + visible_formatted_row + hidden_searchable_content
 
-    We use a two-column format:
-    - Column 1: session_id (hidden, for extraction)
-    - Column 2: formatted_row (for display and search)
-
-    Note: Deep content search is not available in interactive mode due to
-    fzf limitations. Use list mode (-l) for deep searching.
+    We combine everything in a single field with hidden parts:
+    - Hidden session_id at start (using ANSI concealment)
+    - Visible formatted row
+    - Hidden searchable content at end (truncated to prevent overflow)
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
     @complexity O(n) where n is number of sessions
     @pure true
     """
+    import re
     from cc_fi.core.formatter import (
         format_header_separator,
         format_instruction_header,
@@ -49,17 +48,32 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     instruction_lines = instruction_header.split("\n")
 
     rows = [
-        f"INSTRUCTION1|{instruction_lines[0]}",
-        f"INSTRUCTION2|{instruction_lines[1]}",
-        f"HEADER|{format_list_header()}",
-        f"SEPARATOR|{format_header_separator()}",
+        instruction_lines[0],
+        instruction_lines[1],
+        format_list_header(),
+        format_header_separator(),
     ]
 
     for session in sessions:
         formatted = format_list_row(session)
-        # Simple format: just session_id and formatted display
-        # This ensures no overflow and clean one-line entries
-        row = f"{session.session_id}|{formatted}"
+
+        # Strip ANSI codes from formatted text to create searchable version
+        formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
+
+        # Take a reasonable amount of full content for searching (limit to prevent overflow)
+        # We'll take first 500 chars which should catch most search terms
+        content_snippet = session.full_content[:500].replace("\n", " ")
+
+        # Combine plain formatted and content for searchable text
+        searchable = f"{formatted_plain} {content_snippet}"
+
+        # Build the line with hidden session ID and searchable content
+        # Use ANSI concealment (ESC[8m) to hide text
+        hidden_id = f"\x1b[8m{session.session_id}|\x1b[0m"
+        hidden_search = f"\x1b[8m {searchable}\x1b[0m"
+
+        # Combine: hidden_id + visible_formatted + hidden_search
+        row = f"{hidden_id}{formatted}{hidden_search}"
         rows.append(row)
 
     return "\n".join(rows)
@@ -69,13 +83,16 @@ def extract_session_id_from_line(line: str) -> str:
     """
     Extract session ID from fzf input line.
 
-    @param line fzf input line with format: session_id|display_content
-    @returns Session ID (first field before pipe)
+    @param line fzf input line with hidden session_id at start
+    @returns Session ID extracted from hidden part
     @complexity O(1)
     @pure true
     """
-    # Session ID is the first field before the pipe
-    parts = line.split("|", 1)
+    import re
+    # Remove ANSI codes to get plain text
+    plain = re.sub(r'\x1b\[[0-9;]*m', '', line)
+    # Session ID is before the first pipe
+    parts = plain.split("|", 1)
     return parts[0] if parts else ""
 
 
@@ -100,15 +117,13 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
 
     # Build preview command that extracts session ID and passes search query
     # {q} is the current fzf query, {} is the selected line
-    # Session ID is the first field in pipe-delimited format
-    preview_cmd = "echo {} | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
+    # Session ID is hidden at the start, extract it after removing ANSI codes
+    preview_cmd = "echo {} | sed 's/\\x1b\\[[0-9;]*m//g' | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
 
     cmd = [
         "fzf",
         "--ansi",
         "--exact",  # Require exact substring match, not fuzzy matching
-        "--delimiter=|",
-        "--with-nth=2",  # Display only column 2 (formatted row + invisible searchable)
         "--header-lines=4",  # Skip instruction (2 lines) + column header + separator
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
