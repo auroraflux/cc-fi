@@ -13,7 +13,7 @@ SESSION_FILE_EXTENSION = ".jsonl"
 
 # Message truncation
 MESSAGE_PREVIEW_LENGTH = 60
-MESSAGE_DETAIL_LENGTH = 200
+MESSAGE_DETAIL_LENGTH = 400  # Doubled from 200 for more preview content
 
 # Display settings
 PROJECT_COLUMN_WIDTH = 20
@@ -44,6 +44,7 @@ ICON_COMMENT = ""  # U+EA6B (nf-cod-comment)
 ICON_BRANCH = ""    # U+E725 (nf-dev-git_branch)
 ICON_RECENT = ""  # U+F27B (nf-fa-comment_dots)
 ICON_FIRST = ""    # U+EDEF (nf-fa-dice_one)
+ICON_SESSION = "\uf15c"  # U+F15C (nf-fa-file_text)
 
 
 

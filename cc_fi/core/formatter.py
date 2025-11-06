@@ -1,5 +1,6 @@
 """Output formatting for sessions."""
 
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -21,15 +22,44 @@ from cc_fi.constants import (
     ICON_RECENT,
     ICON_FIRST,
     ICON_BRANCH,
+    ICON_SESSION,
     MESSAGE_DETAIL_LENGTH,
     MESSAGE_PREVIEW_LENGTH,
-    FIRST_COLUMN_WIDTH,
-    RECENT_COLUMN_WIDTH,
     PATH_COLUMN_WIDTH,
     PROJECT_COLUMN_WIDTH,
     TIME_COLUMN_WIDTH,
 )
 from cc_fi.models.session import SessionData
+
+
+def get_dynamic_column_widths() -> tuple[int, int]:
+    """
+    Calculate dynamic widths for RECENT and FIRST columns based on terminal width.
+
+    @returns Tuple of (recent_width, first_width)
+    @complexity O(1)
+    @pure false - reads terminal size
+    """
+    try:
+        terminal_width = shutil.get_terminal_size().columns
+    except Exception:
+        terminal_width = 120  # Fallback width
+
+    # Fixed column widths + separators (2 spaces between each = 8 total)
+    fixed_width = PROJECT_COLUMN_WIDTH + PATH_COLUMN_WIDTH + TIME_COLUMN_WIDTH + 8
+
+    # Remaining space for RECENT and FIRST columns
+    remaining = terminal_width - fixed_width
+
+    # Ensure minimum width
+    if remaining < 40:
+        return (30, 30)
+
+    # Split remaining space: RECENT gets 40%, FIRST gets 60%
+    recent_width = int(remaining * 0.4)
+    first_width = remaining - recent_width - 2  # Subtract 2 for separator
+
+    return (recent_width, first_width)
 
 
 def normalize_whitespace(text: str) -> str:
@@ -100,8 +130,10 @@ def format_list_row(session: SessionData) -> str:
     @param session SessionData to format
     @returns Formatted string with ANSI colors
     @complexity O(1)
-    @pure true
+    @pure false - reads terminal size
     """
+    recent_width, first_width = get_dynamic_column_widths()
+
     project = session.project_name[:PROJECT_COLUMN_WIDTH].ljust(PROJECT_COLUMN_WIDTH)
     path = shorten_path(session.cwd)[:PATH_COLUMN_WIDTH].ljust(PATH_COLUMN_WIDTH)
     time_str = format_timestamp(session.timestamp).ljust(TIME_COLUMN_WIDTH)
@@ -110,12 +142,12 @@ def format_list_row(session: SessionData) -> str:
     recent_msg = session.last_message.strip() if session.last_message else ""
     if not recent_msg:
         recent_msg = "(no recent message)"
-    recent = truncate_message(recent_msg, RECENT_COLUMN_WIDTH).ljust(RECENT_COLUMN_WIDTH)
+    recent = truncate_message(recent_msg, recent_width).ljust(recent_width)
 
     first_msg = session.first_message.strip() if session.first_message else ""
     if not first_msg:
         first_msg = "(no first message)"
-    first = truncate_message(first_msg, FIRST_COLUMN_WIDTH).ljust(FIRST_COLUMN_WIDTH)
+    first = truncate_message(first_msg, first_width).ljust(first_width)
 
     return (
         f"{COLOR_GREEN}{project}{COLOR_RESET}  "
@@ -132,13 +164,15 @@ def format_list_header() -> str:
 
     @returns Formatted header string with bold colors matching data columns
     @complexity O(1)
-    @pure true
+    @pure false - reads terminal size
     """
+    recent_width, first_width = get_dynamic_column_widths()
+
     project = f"{ICON_PROJECT} PROJECT".ljust(PROJECT_COLUMN_WIDTH)
     path = f"{ICON_FOLDER} PATH".ljust(PATH_COLUMN_WIDTH)
     time_str = f"{ICON_CLOCK} TIME".ljust(TIME_COLUMN_WIDTH)
-    recent = f"{ICON_RECENT} RECENT".ljust(RECENT_COLUMN_WIDTH)
-    first = f"{ICON_FIRST} FIRST"
+    recent = f"{ICON_RECENT} RECENT".ljust(recent_width)
+    first = f"{ICON_FIRST} FIRST".ljust(first_width)
 
     return (
         f"{COLOR_BOLD}{COLOR_GREEN}{project}{COLOR_RESET}  "
@@ -155,13 +189,15 @@ def format_header_separator() -> str:
 
     @returns Formatted separator line with colors matching columns
     @complexity O(1)
-    @pure true
+    @pure false - reads terminal size
     """
+    recent_width, first_width = get_dynamic_column_widths()
+
     project_sep = "─" * PROJECT_COLUMN_WIDTH
     path_sep = "─" * PATH_COLUMN_WIDTH
     time_sep = "─" * TIME_COLUMN_WIDTH
-    recent_sep = "─" * RECENT_COLUMN_WIDTH
-    first_sep = "─" * FIRST_COLUMN_WIDTH
+    recent_sep = "─" * recent_width
+    first_sep = "─" * first_width
 
     return (
         f"{COLOR_GREEN}{project_sep}{COLOR_RESET}  "
@@ -195,6 +231,7 @@ def format_instruction_header() -> str:
 def format_fzf_preview(session: SessionData) -> str:
     """
     Format session details for fzf preview pane with NerdFont icons.
+    Layout matches table order: Project, Path, Time, Recent, First, Session ID, Message count.
 
     @param session SessionData to format
     @returns Multi-line formatted string
@@ -206,25 +243,29 @@ def format_fzf_preview(session: SessionData) -> str:
     first_msg = truncate_message(session.first_message, MESSAGE_DETAIL_LENGTH)
     last_msg = truncate_message(session.last_message, MESSAGE_DETAIL_LENGTH)
 
+    # Start with project, path, time (matching table order)
     lines = [
-        f"{COLOR_BOLD}{COLOR_GRAY}Session:{COLOR_RESET}       {session.session_id}",
         f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {session.project_name}",
         f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {short_path}",
     ]
 
+    # Add branch if it exists (between path and time)
     if session.git_branch:
         lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {session.git_branch}")
 
+    # Continue with time, recent, first (matching table order)
     lines.extend(
         [
             f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {time_str}",
-            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {session.message_count}",
+            "",
+            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
+            last_msg,
             "",
             f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:{COLOR_RESET}",
             first_msg,
             "",
-            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
-            last_msg,
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}      {session.session_id}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {session.message_count}",
         ]
     )
 
