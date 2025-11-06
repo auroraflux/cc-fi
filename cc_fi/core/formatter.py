@@ -43,11 +43,14 @@ def get_dynamic_column_widths() -> tuple[int, int]:
     """
     try:
         terminal_width = shutil.get_terminal_size().columns
+        # If terminal reports 80 (common fallback), assume modern wide terminal
+        if terminal_width == 80:
+            terminal_width = 200  # Modern terminals are typically 150-300 chars wide
     except Exception:
-        terminal_width = 120  # Fallback width
+        terminal_width = 200  # Fallback to wide terminal assumption
 
     # Reserve space for fzf border (2 chars: 1 on each side) and some padding
-    usable_width = terminal_width - 4  # 2 for border, 2 for safety margin
+    usable_width = terminal_width - 6  # 2 for border, 4 for safety margin and fzf padding
 
     # Fixed column widths + separators (2 spaces between each = 8 total)
     fixed_width = PROJECT_COLUMN_WIDTH + PATH_COLUMN_WIDTH + TIME_COLUMN_WIDTH + 8
@@ -55,14 +58,17 @@ def get_dynamic_column_widths() -> tuple[int, int]:
     # Remaining space for RECENT and FIRST columns
     remaining = usable_width - fixed_width
 
-    # Ensure minimum width
-    if remaining < 40:
-        return (30, 30)
+    # If terminal is too narrow for fixed columns, use absolute minimum
+    if remaining < 2:
+        # Terminal can't even fit fixed columns - use bare minimum
+        # This will still truncate but at least won't crash
+        return (5, 5)
 
     # Split remaining space equally between RECENT and FIRST
     # Account for 2-space separator between them
     # Total: recent_width + 2 (separator) + first_width = remaining
-    available_for_columns = remaining - 2  # Reserve 2 for separator
+    available_for_columns = max(remaining - 2, 10)  # At least 10 total for both columns
+
     recent_width = available_for_columns // 2
     first_width = available_for_columns - recent_width  # Give any extra char to FIRST
 
