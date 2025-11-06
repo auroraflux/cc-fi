@@ -156,6 +156,23 @@ def format_header_separator() -> str:
     )
 
 
+def format_instruction_header() -> str:
+    """
+    Format instruction header with keyboard shortcuts for interactive mode.
+
+    @returns Two-line string: instructions + separator
+    @complexity O(1)
+    @pure true
+    """
+    instructions = "Type to search | ↑↓ Navigate | ↵ Select | Esc Cancel"
+    separator = "─" * 80  # Full-width separator
+
+    return (
+        f"{COLOR_GRAY}{instructions}{COLOR_RESET}\n"
+        f"{COLOR_GRAY}{separator}{COLOR_RESET}"
+    )
+
+
 def format_fzf_preview(session: SessionData) -> str:
     """
     Format session details for fzf preview pane with NerdFont icons.

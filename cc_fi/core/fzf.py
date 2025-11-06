@@ -23,16 +23,25 @@ def check_fzf_installed() -> bool:
 
 def build_fzf_input(sessions: list[SessionData]) -> str:
     """
-    Build fzf input with header, separator, and session IDs.
+    Build fzf input with instruction header, table header, separator, and session IDs.
 
     @param sessions List of sessions to display
-    @returns Newline-separated rows with header and session_id|formatted_row
+    @returns Newline-separated rows with instruction header and session_id|formatted_row
     @complexity O(n) where n is number of sessions
     @pure true
     """
-    from cc_fi.core.formatter import format_header_separator, format_list_header
+    from cc_fi.core.formatter import (
+        format_header_separator,
+        format_instruction_header,
+        format_list_header,
+    )
+
+    instruction_header = format_instruction_header()
+    instruction_lines = instruction_header.split("\n")
 
     rows = [
+        f"INSTRUCTION1|{instruction_lines[0]}",
+        f"INSTRUCTION2|{instruction_lines[1]}",
         f"HEADER|{format_list_header()}",
         f"SEPARATOR|{format_header_separator()}",
     ]
@@ -83,7 +92,7 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
         "--ansi",
         "--delimiter=|",
         "--with-nth=2..",
-        "--header-lines=2",
+        "--header-lines=4",  # Skip instruction (2 lines) + column header + separator
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
         f"--preview-window=down:{FZF_PREVIEW_HEIGHT_PERCENT}%",

@@ -138,3 +138,28 @@ def test_list_header_has_icons_and_path():
 
     # Ensure old DIRECTORY terminology is gone
     assert "DIRECTORY" not in header
+
+
+def test_instruction_header_format():
+    """Test that instruction header has proper format and content."""
+    from cc_fi.constants import COLOR_GRAY, COLOR_RESET
+    from cc_fi.core.formatter import format_instruction_header
+
+    result = format_instruction_header()
+
+    # Should be two lines (instruction + separator)
+    lines = result.split("\n")
+    assert len(lines) == 2
+
+    # First line should contain keyboard shortcuts
+    assert "Type to search" in lines[0]
+    assert "Navigate" in lines[0]
+    assert "Select" in lines[0]
+    assert "Cancel" in lines[0]
+
+    # Second line should be a separator
+    assert "─" in lines[1]
+
+    # Both lines should use gray color
+    assert COLOR_GRAY in result
+    assert COLOR_RESET in result
