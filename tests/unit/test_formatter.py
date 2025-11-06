@@ -125,8 +125,8 @@ def test_fzf_preview_colors_match_columns():
     assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:" in result
     assert f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:" in result
     assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:" in result
-    assert f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:" in result
-    assert f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:" in result
+    assert f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First Msg:" in result
+    assert f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent Msg:" in result
 
 
 def test_list_header_has_icons_and_path():
