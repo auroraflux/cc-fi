@@ -17,6 +17,7 @@ Ultrafast CLI tool for discovering and resuming Claude Code sessions across all 
 - Python 3.12+
 - `fzf` (for interactive mode)
 - `uv` (for Python environment management)
+- NerdFont-patched terminal font (recommended for best visual experience)
 
 ```bash
 # Install fzf
@@ -25,6 +26,10 @@ apt install fzf   # Linux
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install a NerdFont (optional but recommended)
+brew install --cask font-hack-nerd-font  # macOS
+# Or download from: https://www.nerdfonts.com/
 ```
 
 ### Install cc-fi
@@ -68,11 +73,12 @@ cc-fi -i
 ```
 
 Launches fzf with:
-- **Fixed header** at top showing column names (Project, Directory, Time, First Message)
+- **Instruction header** showing keyboard shortcuts: "Type to search | ↑↓ Navigate | ↵ Select | Esc Cancel"
+- **Fixed column headers** with NerdFont icons: ` PROJECT`, ` PATH`, ` TIME`, ` FIRST MESSAGE`
 - **Newest sessions first** - starts at the top of the list
-- **Columnar list view** with colored, aligned fields
-- **Right preview pane** (50% width) showing full session details
-- **Arrow keys** to navigate, **Enter** to select, **Esc** to cancel
+- **Full-width columnar list** (60% height) with colored, aligned fields
+- **Bottom preview pane** (40% height) showing complete session details
+- **Type to search**, **arrow keys** to navigate, **Enter** to select, **Esc** to cancel
 
 After selection, shows the resume command:
 ```bash
@@ -203,6 +209,20 @@ apt install fzf   # Linux
 ### Parsing warnings
 
 Some sessions may fail to parse if they're empty or corrupted. These warnings are normal and don't affect functionality. Valid sessions are still indexed.
+
+### Icons show as boxes or missing characters
+
+cc-fi uses NerdFont icons for visual consistency. If you see boxes (□) or missing characters instead of bullets (`) in headers:
+
+1. Install a NerdFont-patched font:
+   ```bash
+   brew install --cask font-hack-nerd-font  # macOS
+   ```
+   Or download from [nerdfonts.com](https://www.nerdfonts.com/)
+
+2. Configure your terminal to use the NerdFont
+
+The tool remains fully functional without NerdFonts - icons are purely visual enhancements.
 
 ## Design Philosophy
 
