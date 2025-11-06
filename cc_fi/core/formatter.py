@@ -244,28 +244,29 @@ def format_fzf_preview(session: SessionData) -> str:
     last_msg = truncate_message(session.last_message, MESSAGE_DETAIL_LENGTH)
 
     # Start with project, path, time (matching table order)
+    # Values are colored to match their header color for easy visual correlation
     lines = [
-        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {session.project_name}",
-        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {short_path}",
+        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{session.project_name}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{short_path}{COLOR_RESET}",
     ]
 
     # Add branch if it exists (between path and time)
     if session.git_branch:
-        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {session.git_branch}")
+        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{session.git_branch}{COLOR_RESET}")
 
     # Continue with time, recent, first (matching table order)
     lines.extend(
         [
-            f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {time_str}",
+            f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {COLOR_YELLOW}{time_str}{COLOR_RESET}",
             "",
             f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
-            last_msg,
+            f"{COLOR_MAUVE}{last_msg}{COLOR_RESET}",
             "",
             f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:{COLOR_RESET}",
-            first_msg,
+            f"{COLOR_LAVENDER}{first_msg}{COLOR_RESET}",
             "",
-            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}      {session.session_id}",
-            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {session.message_count}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}     {COLOR_GRAY}{session.session_id}{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {COLOR_GRAY}{session.message_count}{COLOR_RESET}",
         ]
     )
 
