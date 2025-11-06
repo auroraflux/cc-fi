@@ -15,6 +15,8 @@ I built this with Claude Code because I kept losing track of my own sessions. It
 
 Take it, break it, extend it. Whatever you want.
 
+![cc-fi in action](docs/screenshot.png)
+
 ## Features
 
 - **Interactive fuzzy search** - Type to filter sessions by project, path, or any message content
