@@ -40,26 +40,43 @@ def extract_cwd_from_storage_path(file_path: Path) -> str:
     For example:
     - Session in /home/user → stored in ~/.claude/projects/-home-user/
     - Session in /home/user/project → stored in ~/.claude/projects/-home-user-project/
+    - Session in /home/user/.config → stored in ~/.claude/projects/-home-user--config/
 
     The cwd field INSIDE the file content can differ if the user changed directories during the session.
     To correctly resume a session, we must use the directory where the file is STORED, not the cwd
     from the file content.
 
+    Encoding rules:
+    - Leading dash removed
+    - Double dash (--) represents dot (.) for hidden directories
+    - Single dash (-) represents slash (/)
+
     @param file_path Path to session file
     @returns Working directory path derived from storage location
-    @complexity O(1)
+    @complexity O(n) where n is length of directory name
     @pure true
     """
-    # Get parent directory name (e.g., "-home-user-project")
+    # Get parent directory name (e.g., "-home-user--config")
     storage_dir = file_path.parent.name
 
-    # Convert directory name back to path by replacing leading dash and remaining dashes with slashes
-    # "-home-user-project" -> "/home/user/project"
-    if storage_dir.startswith("-"):
-        return "/" + storage_dir[1:].replace("-", "/")
+    if not storage_dir.startswith("-"):
+        # Fallback: if directory name doesn't start with dash, return as-is
+        return storage_dir
 
-    # Fallback: if directory name doesn't start with dash, return as-is
-    return storage_dir
+    # Remove leading dash
+    path_encoded = storage_dir[1:]
+
+    # Replace double dashes with /. FIRST (before single dash replacement)
+    # Double dash represents slash + dot for hidden directories
+    # "Users-harsha--tweakcc" -> "Users-harsha/.tweakcc"
+    path_encoded = path_encoded.replace("--", "/.")
+
+    # Then replace remaining single dashes with slashes
+    # "Users-harsha/.tweakcc" -> "Users/harsha/.tweakcc"
+    path = path_encoded.replace("-", "/")
+
+    # Add leading slash
+    return "/" + path
 
 
 def is_boilerplate_message(text: str) -> bool:
