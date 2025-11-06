@@ -76,6 +76,13 @@ def handle_interactive_mode() -> None:
     import logging
     from cc_fi.core.fzf import run_fzf_selection
 
+    # Enable tab completion for directory input
+    try:
+        import readline
+        readline.parse_and_bind("tab: complete")
+    except ImportError:
+        pass  # readline not available on this platform
+
     logging.disable(logging.CRITICAL)
 
     sessions = get_sessions_with_cache()
