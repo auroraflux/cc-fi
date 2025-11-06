@@ -29,12 +29,21 @@ COLOR_GRAY = "\033[90m"
 COLOR_BOLD = "\033[1m"
 COLOR_RESET = "\033[0m"
 
+# Catppuccin Mocha color palette (24-bit RGB)
+COLOR_MAUVE = "\033[38;2;198;160;246m"  # #c6a0f6 - Recent messages
+COLOR_LAVENDER = "\033[38;2;183;189;248m"  # #b7bdf8 - First messages
+COLOR_OVERLAY0 = "\033[38;2;110;115;141m"  # #6e738d - Instruction text
+COLOR_CATPPUCCIN_BLUE = "\033[38;2;138;173;244m"  # #8aadf4 - Highlights
+
 # NerdFont icons (requires NerdFont-patched terminal font)
 ICON_PROJECT = ""  # U+EB30 (nf-cod-project)
 ICON_FOLDER = ""    # U+EA83 (nf-cod-folder)
 ICON_CLOCK = ""      # U+F017 (nf-fa-clock)
 ICON_COMMENT = ""  # U+EA6B (nf-cod-comment)
 ICON_BRANCH = ""    # U+E725 (nf-dev-git_branch)
+ICON_RECENT = ""  # U+F27B (nf-fa-comment_dots)
+ICON_FIRST = ""    # U+EDEF (nf-fa-dice_one)
+
 
 
 # FZF settings
