@@ -98,6 +98,7 @@ def test_fzf_preview_colors_match_columns():
         ICON_RECENT,
         ICON_FIRST,
         ICON_BRANCH,
+        ICON_SESSION,
     )
     from cc_fi.core.formatter import format_fzf_preview
     from cc_fi.models.session import SessionData
@@ -118,7 +119,7 @@ def test_fzf_preview_colors_match_columns():
     result = format_fzf_preview(session)
 
     # Check that headers are bold and color-matched with specific icons
-    assert f"{COLOR_BOLD}{COLOR_GRAY}Session:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:" in result
     assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:" in result
     assert f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:" in result
     assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:" in result

@@ -22,31 +22,80 @@
 
 ## Installation
 
+### Option 1: pipx (Recommended)
+
+**Works from anywhere, no venv activation needed:**
+
 ```bash
-git clone https://github.com/yourusername/cc-fi.git
+# From GitHub (when published)
+pipx install git+https://github.com/auroraflux/cc-fi.git
+
+# Or from local clone
+git clone https://github.com/auroraflux/cc-fi.git
+cd cc-fi
+pipx install .
+
+# Run from anywhere
+cc-fi
+```
+
+**Installing pipx:**
+```bash
+brew install pipx      # macOS
+apt install pipx       # Linux
+pipx ensurepath        # Add to PATH
+```
+
+### Option 2: uv tool (Modern Alternative)
+
+**Fast, isolated install:**
+
+```bash
+# From GitHub (when published)
+uv tool install git+https://github.com/auroraflux/cc-fi.git
+
+# Or from local clone
+git clone https://github.com/auroraflux/cc-fi.git
+cd cc-fi
+uv tool install .
+
+# Run from anywhere
+cc-fi
+```
+
+### Option 3: Manual Install (Development)
+
+**Interactive installer with multiple options:**
+
+```bash
+git clone https://github.com/auroraflux/cc-fi.git
 cd cc-fi
 ./install.sh
+
+# Follow prompts to choose:
+#   1) pipx install (if available)
+#   2) uv tool install (if available)
+#   3) Manual with wrapper script at ~/.local/bin/cc-fi
 ```
 
-Or manually:
-
-```bash
-uv venv
-source .venv/bin/activate
-uv pip install -e .
-```
+**Manual installation creates a wrapper script so you can run `cc-fi` from anywhere without venv activation.**
 
 ### Installing Dependencies
 
-**macOS (Homebrew):**
+**Required tools:**
 ```bash
+# macOS (Homebrew)
 brew install fzf fd eza
-```
 
-**Linux (Debian/Ubuntu):**
-```bash
+# Linux (Debian/Ubuntu)
 apt install fzf fd-find
 cargo install eza  # or download from GitHub releases
+```
+
+**Optional - Install pipx for easier management:**
+```bash
+brew install pipx && pipx ensurepath  # macOS
+apt install pipx && pipx ensurepath   # Linux
 ```
 
 ## Usage
