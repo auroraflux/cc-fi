@@ -61,8 +61,8 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
         formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
 
         # Take a reasonable amount of full content for searching (limit to prevent overflow)
-        # We'll take first 500 chars which should catch most search terms
-        content_snippet = session.full_content[:500].replace("\n", " ")
+        # We'll take first 300 chars which should catch most search terms without overflow
+        content_snippet = session.full_content[:300].replace("\n", " ").replace("\r", " ")
 
         # Combine plain formatted and content for searchable text
         searchable = f"{formatted_plain} {content_snippet}"
