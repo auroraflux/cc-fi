@@ -66,6 +66,73 @@ def handle_preview_mode(session_id: str, query: str = "") -> None:
         print(f"Session not found: {session_id}")
 
 
+def select_directory_with_fzf() -> str | None:
+    """
+    Use fzf to interactively select a directory.
+
+    @returns Selected directory path or None if cancelled
+    @complexity O(n) where n is number of directories
+    @pure false - launches subprocess
+    """
+    import subprocess
+    from pathlib import Path
+
+    # Use fd to find directories, starting from home
+    home = Path.home()
+
+    # Build fd command to list directories under home
+    # Limit depth to 4 to keep it reasonable
+    cmd = [
+        "fd",
+        "--type", "d",
+        "--max-depth", "4",
+        "--base-directory", str(home),
+        ".",
+    ]
+
+    try:
+        # Get directory list
+        fd_result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if fd_result.returncode != 0:
+            return None
+
+        # Pipe to fzf for selection
+        fzf_cmd = [
+            "fzf",
+            "--prompt", "Select directory: ",
+            "--height", "50%",
+            "--layout", "reverse",
+            "--preview", "ls -la ~/{} 2>/dev/null | head -20",
+            "--preview-window", "right:50%",
+        ]
+
+        fzf_result = subprocess.run(
+            fzf_cmd,
+            input=fd_result.stdout,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if fzf_result.returncode != 0:
+            return None
+
+        selected = fzf_result.stdout.strip()
+        if selected:
+            # Return full path
+            return str(home / selected)
+        return None
+
+    except Exception:
+        return None
+
+
 def handle_interactive_mode() -> None:
     """
     Handle interactive mode with fzf.
@@ -75,29 +142,6 @@ def handle_interactive_mode() -> None:
     """
     import logging
     from cc_fi.core.fzf import run_fzf_selection
-
-    # Enable tab completion for directory input
-    try:
-        import readline
-        import glob
-        import os as readline_os
-
-        def path_completer(text, state):
-            """Tab completion for file paths."""
-            # Expand user home directory
-            text = readline_os.path.expanduser(text)
-            # Get all matching paths
-            matches = glob.glob(text + '*')
-            # Add trailing slash for directories
-            matches = [m + '/' if readline_os.path.isdir(m) else m for m in matches]
-            # Return the state-th match
-            return matches[state] if state < len(matches) else None
-
-        readline.set_completer(path_completer)
-        readline.set_completer_delims(' \t\n')
-        readline.parse_and_bind("tab: complete")
-    except ImportError:
-        pass  # readline not available on this platform
 
     logging.disable(logging.CRITICAL)
 
@@ -130,32 +174,42 @@ def handle_interactive_mode() -> None:
         else:
             # Directory no longer exists - offer options
             print(f"\nWarning: Original directory no longer exists: {selected.cwd}")
-            print("\nClaude Code can restore the session, but you need to specify where to run it.")
-            print("Note: After resuming, you may need to navigate to the correct working directory.\n")
+            print("\nOptions:")
+            print("  1. Browse for directory (uses fzf)")
+            print("  2. Run from current directory")
+            print("  3. Cancel")
 
             try:
-                alt_dir = input("Enter directory path (or press Enter to run from current directory): ").strip()
+                choice = input("\nSelect option (1/2/3): ").strip()
 
-                if alt_dir:
-                    # User specified an alternative directory
-                    alt_path = Path(alt_dir).expanduser().resolve()
-                    if alt_path.exists() and alt_path.is_dir():
-                        resume_cmd = f'cd "{alt_path}" && claude -r {selected.session_id}'
+                if choice == '1':
+                    # Use fzf to select directory
+                    print("\nBrowsing directories (type to search, ESC to cancel)...")
+                    alt_dir = select_directory_with_fzf()
+
+                    if alt_dir:
+                        resume_cmd = f'cd "{alt_dir}" && claude -r {selected.session_id}'
+                        print(f"\nWill execute: {resume_cmd}\n")
+
+                        response = input("Resume? (Y/n): ").strip().lower()
+                        if response in ('', 'y', 'yes'):
+                            os.system(resume_cmd)
+                        else:
+                            print("Cancelled.")
                     else:
-                        print(f"Error: Directory does not exist: {alt_path}")
                         print("Cancelled.")
-                        return
-                else:
+                elif choice == '2':
                     # Run from current directory
                     current_dir = Path.cwd()
                     resume_cmd = f'claude -r {selected.session_id}'
-                    print(f"\n(Will run from: {current_dir})")
+                    print(f"\nWill run from: {current_dir}")
+                    print(f"Will execute: {resume_cmd}\n")
 
-                print(f"\nWill execute: {resume_cmd}\n")
-
-                response = input("Resume? (Y/n): ").strip().lower()
-                if response in ('', 'y', 'yes'):
-                    os.system(resume_cmd)
+                    response = input("Resume? (Y/n): ").strip().lower()
+                    if response in ('', 'y', 'yes'):
+                        os.system(resume_cmd)
+                    else:
+                        print("Cancelled.")
                 else:
                     print("Cancelled.")
             except (KeyboardInterrupt, EOFError):
