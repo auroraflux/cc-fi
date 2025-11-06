@@ -346,7 +346,7 @@ def format_instruction_header() -> str:
         f"Esc {COLOR_CATPPUCCIN_BLUE}Cancel{COLOR_RESET}"
     )
     # Note about search scope
-    search_note = f"{COLOR_OVERLAY0}Searches visible fields only. Use {COLOR_CATPPUCCIN_BLUE}cc-fi -l <term>{COLOR_OVERLAY0} for deep search{COLOR_RESET}"
+    search_note = f"{COLOR_OVERLAY0}Searching visible fields + conversation content{COLOR_RESET}"
 
     return f"{instructions}\n{search_note}"
 

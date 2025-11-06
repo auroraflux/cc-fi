@@ -25,20 +25,19 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: session_id|formatted_row
+    Format: Single line with hidden session_id, visible formatted_row, and zero-width searchable
 
-    We use a simple two-column format:
-    - Column 1: session_id (hidden, for extraction)
-    - Column 2: formatted_row (displayed and searchable)
-
-    Note: Due to fzf limitations, deep content search is not available
-    in interactive mode. Use list mode (-l) for full search capabilities.
+    We combine everything in one line without delimiters:
+    - Hidden session_id using ANSI concealment
+    - Visible formatted row
+    - Zero-width searchable content using cursor positioning
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
     @complexity O(n) where n is number of sessions
     @pure true
     """
+    import re
     from cc_fi.core.formatter import (
         format_header_separator,
         format_instruction_header,
@@ -49,17 +48,31 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     instruction_lines = instruction_header.split("\n")
 
     rows = [
-        f"INSTRUCTION1|{instruction_lines[0]}",
-        f"INSTRUCTION2|{instruction_lines[1]}",
-        f"HEADER|{format_list_header()}",
-        f"SEPARATOR|{format_header_separator()}",
+        instruction_lines[0],
+        instruction_lines[1],
+        format_list_header(),
+        format_header_separator(),
     ]
 
     for session in sessions:
         formatted = format_list_row(session)
 
-        # Simple two-column format for clean display
-        row = f"{session.session_id}|{formatted}"
+        # Strip ANSI codes from formatted to get plain text
+        formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
+
+        # Get searchable content from conversation
+        content_snippet = session.full_content[:300].replace("\n", " ").replace("\r", " ")
+        searchable = f"{formatted_plain} {content_snippet}"
+
+        # Hide session ID using ANSI concealment
+        hidden_id = f"\x1b[8m{session.session_id}|\x1b[0m"
+
+        # Make searchable content zero-width using cursor save/restore
+        # This keeps it searchable but not visible
+        zero_width_searchable = f"\x1b[s{searchable}\x1b[u"
+
+        # Combine all parts in one line
+        row = f"{hidden_id}{formatted}{zero_width_searchable}"
         rows.append(row)
 
     return "\n".join(rows)
@@ -69,13 +82,16 @@ def extract_session_id_from_line(line: str) -> str:
     """
     Extract session ID from fzf input line.
 
-    @param line fzf input line with format: session_id|formatted_row|searchable
-    @returns Session ID (first column)
+    @param line fzf input line with hidden session_id at start
+    @returns Session ID extracted from hidden part
     @complexity O(1)
     @pure true
     """
-    # Session ID is the first field before the pipe
-    parts = line.split("|", 1)
+    import re
+    # Remove ANSI codes to get plain text
+    plain = re.sub(r'\x1b\[[0-9;]*m', '', line)
+    # Session ID is before the first pipe
+    parts = plain.split("|", 1)
     return parts[0] if parts else ""
 
 
@@ -100,15 +116,13 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
 
     # Build preview command that extracts session ID and passes search query
     # {q} is the current fzf query, {} is the selected line
-    # Session ID is in column 1
-    preview_cmd = "echo {} | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
+    # Session ID is hidden at the start, extract it after removing ANSI codes
+    preview_cmd = "echo {} | sed 's/\\x1b\\[[0-9;]*m//g' | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
 
     cmd = [
         "fzf",
         "--ansi",
         "--exact",  # Require exact substring match, not fuzzy matching
-        "--delimiter=|",
-        "--with-nth=2",  # Display only column 2 (formatted row)
         "--header-lines=4",  # Skip instruction (2 lines) + column header + separator
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
