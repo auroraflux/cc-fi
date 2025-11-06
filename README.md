@@ -26,19 +26,19 @@ uv pip install -e .
 
 ## Usage
 
-List all sessions:
+Interactive browser (default):
 ```bash
 cc-fi
 ```
 
-Search sessions:
+List all sessions:
 ```bash
-cc-fi search-term
+cc-fi -l
 ```
 
-Interactive browser with fzf:
+Search sessions:
 ```bash
-cc-fi -i
+cc-fi -l search-term
 ```
 
 Force cache rebuild:

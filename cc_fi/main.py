@@ -121,11 +121,11 @@ def create_parser() -> argparse.ArgumentParser:
     """
     parser = argparse.ArgumentParser(
         prog="cc-fi",
-        description="Ultrafast Claude Code session finder and browser",
+        description="Find and resume Claude Code sessions",
         epilog="Examples:\n"
-        "  cc-fi                    List all sessions\n"
-        "  cc-fi search-term        Search sessions\n"
-        "  cc-fi -i                 Interactive mode with fzf\n"
+        "  cc-fi                    Interactive mode (default)\n"
+        "  cc-fi -l                 List all sessions\n"
+        "  cc-fi -l search-term     List filtered sessions\n"
         "  cc-fi -r                 Force rebuild cache\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
@@ -134,14 +134,14 @@ def create_parser() -> argparse.ArgumentParser:
         "search",
         nargs="?",
         default="",
-        help="Search term to filter sessions",
+        help="Search term to filter sessions (use with -l)",
     )
 
     parser.add_argument(
-        "-i",
-        "--interactive",
+        "-l",
+        "--list",
         action="store_true",
-        help="Launch interactive fzf browser",
+        help="List sessions instead of interactive mode",
     )
 
     parser.add_argument(
@@ -196,11 +196,12 @@ def main() -> int:
             handle_preview_mode(args.preview)
             return 0
 
-        if args.interactive:
-            handle_interactive_mode()
+        if args.list:
+            handle_list_mode(args.search, args.rebuild)
             return 0
 
-        handle_list_mode(args.search, args.rebuild)
+        # Default: interactive mode
+        handle_interactive_mode()
         return 0
 
     except Exception as e:
