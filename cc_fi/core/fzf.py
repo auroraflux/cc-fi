@@ -25,21 +25,20 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: session_id|formatted_row_with_searchable_content
+    Format: session_id|formatted_row
 
     We use a two-column format:
     - Column 1: session_id (hidden, for extraction)
-    - Column 2: formatted_row + hidden searchable content
+    - Column 2: formatted_row (for display and search)
 
-    The searchable content is appended invisibly to allow deep search
-    while maintaining clean display.
+    Note: Deep content search is not available in interactive mode due to
+    fzf limitations. Use list mode (-l) for deep searching.
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
     @complexity O(n) where n is number of sessions
     @pure true
     """
-    import re
     from cc_fi.core.formatter import (
         format_header_separator,
         format_instruction_header,
@@ -58,22 +57,9 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
 
     for session in sessions:
         formatted = format_list_row(session)
-
-        # Strip ANSI codes from formatted text for searchable version
-        formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
-
-        # Build searchable content (plain text + full content)
-        # Add unique markers to avoid false matches
-        searchable_content = f" SEARCH_START {formatted_plain} {session.full_content} SEARCH_END"
-
-        # Make searchable content invisible using ANSI concealment
-        invisible_searchable = f"\x1b[8m{searchable_content}\x1b[0m"
-
-        # Combine visible formatted text with invisible searchable text
-        display_content = f"{formatted}{invisible_searchable}"
-
-        # Build row: session_id|display_content
-        row = f"{session.session_id}|{display_content}"
+        # Simple format: just session_id and formatted display
+        # This ensures no overflow and clean one-line entries
+        row = f"{session.session_id}|{formatted}"
         rows.append(row)
 
     return "\n".join(rows)
