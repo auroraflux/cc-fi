@@ -37,12 +37,31 @@ Take it, break it, extend it. Whatever you want.
 
 ## Installation
 
-### Option 1: pipx (Recommended)
+### Option 1: mise (Easiest)
+
+**One command to install everything:**
+
+```bash
+# Install mise if you don't have it
+curl https://mise.run | sh
+
+# Clone and install
+git clone https://github.com/auroraflux/cc-fi.git
+cd cc-fi
+mise install
+
+# Run from anywhere
+cc-fi
+```
+
+Mise handles the installation automatically using pipx in an isolated environment. No manual venv or PATH management needed.
+
+### Option 2: pipx
 
 **Works from anywhere, no venv activation needed:**
 
 ```bash
-# From GitHub (when published)
+# From GitHub
 pipx install git+https://github.com/auroraflux/cc-fi.git
 
 # Or from local clone
@@ -61,7 +80,7 @@ apt install pipx       # Linux
 pipx ensurepath        # Add to PATH
 ```
 
-### Option 2: uv tool (Modern Alternative)
+### Option 3: uv tool
 
 **Fast, isolated install:**
 
@@ -78,7 +97,7 @@ uv tool install .
 cc-fi
 ```
 
-### Option 3: Manual Install (Development)
+### Option 4: Manual Install (Development)
 
 **Interactive installer with multiple options:**
 

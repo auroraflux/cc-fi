@@ -1,0 +1,11 @@
+# mise configuration for cc-fi
+# Install with: mise install
+# or auto-install with: mise use
+
+[tools]
+# Install cc-fi from current directory using pipx
+# This creates an isolated environment and makes cc-fi available globally
+"pipx:cc-fi" = {path = "."}
+
+# Alternative: Install from GitHub
+# "pipx:cc-fi" = "git+https://github.com/auroraflux/cc-fi.git"
