@@ -10,14 +10,14 @@ from cc_fi.core.parser import extract_project_name, is_tool_result_message
 
 def test_extract_project_name_simple_path():
     """Test extracting project name from simple path."""
-    cwd = "/Users/harsha/Tools/cc-fi"
+    cwd = str(Path("projects") / "cc-fi")
     result = extract_project_name(cwd)
     assert result == "cc-fi"
 
 
 def test_extract_project_name_with_trailing_slash():
     """Test extracting project name with trailing slash."""
-    cwd = "/Users/harsha/Tools/cc-fi/"
+    cwd = str(Path("projects") / "cc-fi") + "/"
     result = extract_project_name(cwd)
     assert result == "cc-fi"  # Path handles trailing slashes correctly
 

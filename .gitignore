@@ -44,3 +44,16 @@ openspec/
 CLAUDE.md
 guidelines.md
 .claude/commands/openspec/
+
+# Development artifacts (prevent re-addition)
+readme-guidelines.md
+AGENTS.md
+OPENSPEC-*.md
+claude-session-finder-POSTMORTEM.md
+glyphs.txt
+nerddfont_cheatsheet.yaml
+*.cheatsheet.*
+
+# Redundant dependency files
+requirements.in
+requirements.txt
