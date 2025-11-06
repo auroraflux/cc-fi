@@ -79,6 +79,22 @@ def handle_interactive_mode() -> None:
     # Enable tab completion for directory input
     try:
         import readline
+        import glob
+        import os as readline_os
+
+        def path_completer(text, state):
+            """Tab completion for file paths."""
+            # Expand user home directory
+            text = readline_os.path.expanduser(text)
+            # Get all matching paths
+            matches = glob.glob(text + '*')
+            # Add trailing slash for directories
+            matches = [m + '/' if readline_os.path.isdir(m) else m for m in matches]
+            # Return the state-th match
+            return matches[state] if state < len(matches) else None
+
+        readline.set_completer(path_completer)
+        readline.set_completer_delims(' \t\n')
         readline.parse_and_bind("tab: complete")
     except ImportError:
         pass  # readline not available on this platform
