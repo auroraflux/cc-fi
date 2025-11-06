@@ -83,12 +83,14 @@ def select_directory_with_fzf() -> str | None:
     home = Path.home()
 
     # Build fd command to list directories under home
-    # Limit depth to 3 for better performance
+    # No depth limit - user can navigate to any subdirectory
     fd_cmd = [
         "fd",
         "--type", "d",
-        "--max-depth", "3",
         "--base-directory", str(home),
+        "--exclude", ".git",
+        "--exclude", "node_modules",
+        "--exclude", ".cache",
         ".",
     ]
 
@@ -98,8 +100,8 @@ def select_directory_with_fzf() -> str | None:
         "--prompt", "Select directory: ",
         "--height", "50%",
         "--layout", "reverse",
-        "--preview", "eza -la ~/{} 2>/dev/null || ls -la ~/{} 2>/dev/null | head -20",
-        "--preview-window", "right:50%",
+        "--preview", "eza -la --color=always --group-directories-first ~/{} 2>/dev/null || ls -la ~/{} 2>/dev/null | head -20",
+        "--preview-window", "right:50%:wrap",
     ]
 
     try:
