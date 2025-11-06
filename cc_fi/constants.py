@@ -37,13 +37,13 @@ COLOR_OVERLAY0 = "\033[38;2;110;115;141m"  # #6e738d - Instruction text
 COLOR_CATPPUCCIN_BLUE = "\033[38;2;138;173;244m"  # #8aadf4 - Highlights
 
 # NerdFont icons (requires NerdFont-patched terminal font)
-ICON_PROJECT = ""  # U+EB30 (nf-cod-project)
-ICON_FOLDER = ""    # U+EA83 (nf-cod-folder)
-ICON_CLOCK = ""      # U+F017 (nf-fa-clock)
-ICON_COMMENT = ""  # U+EA6B (nf-cod-comment)
-ICON_BRANCH = ""    # U+E725 (nf-dev-git_branch)
-ICON_RECENT = ""  # U+F27B (nf-fa-comment_dots)
-ICON_FIRST = ""    # U+F0E0 (nf-fa-envelope)
+ICON_PROJECT = "\ueb30"  # U+EB30 (nf-cod-project)
+ICON_FOLDER = "\uea83"    # U+EA83 (nf-cod-folder)
+ICON_CLOCK = "\uf017"      # U+F017 (nf-fa-clock)
+ICON_COMMENT = "\uea6b"  # U+EA6B (nf-cod-comment)
+ICON_BRANCH = "\ue725"    # U+E725 (nf-dev-git_branch)
+ICON_RECENT = "\uf27b"  # U+F27B (nf-fa-comment_dots)
+ICON_FIRST = "\uf0e0"    # U+F0E0 (nf-fa-envelope)
 ICON_SESSION = "\uf15c"  # U+F15C (nf-fa-file_text)
 
 
