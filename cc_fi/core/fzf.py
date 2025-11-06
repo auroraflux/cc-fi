@@ -23,10 +23,14 @@ def check_fzf_installed() -> bool:
 
 def build_fzf_input(sessions: list[SessionData]) -> str:
     """
-    Build fzf input with instruction header, table header, separator, and session IDs.
+    Build fzf input with full conversation content for deep search.
+
+    Format: session_id|visible_row\tfull_content
+    - Everything before \t is displayed in fzf
+    - Everything after \t is searchable but hidden (deep search)
 
     @param sessions List of sessions to display
-    @returns Newline-separated rows with instruction header and session_id|formatted_row
+    @returns Newline-separated rows with hidden searchable content
     @complexity O(n) where n is number of sessions
     @pure true
     """
@@ -48,7 +52,8 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
 
     for session in sessions:
         formatted = format_list_row(session)
-        rows.append(f"{session.session_id}|{formatted}")
+        # Append full_content after tab for deep search (hidden but searchable)
+        rows.append(f"{session.session_id}|{formatted}\t{session.full_content}")
 
     return "\n".join(rows)
 

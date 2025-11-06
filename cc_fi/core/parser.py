@@ -81,6 +81,64 @@ def is_tool_result_message(data: dict) -> bool:
     )
 
 
+def extract_all_user_messages(file_path: Path) -> str:
+    """
+    Extract all user messages from session for deep search.
+
+    Excludes:
+    - Tool result messages
+    - Boilerplate messages (continuations, commands)
+    - Assistant messages
+
+    Messages are joined with " | " separator for fzf deep search.
+
+    @param file_path Path to session JSONL file
+    @returns All user messages joined with " | " separator
+    @complexity O(n) where n is lines in session file
+    @pure false - reads filesystem
+    """
+    messages = []
+
+    try:
+        with file_path.open("r", encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+
+                try:
+                    data = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+
+                # Only process user messages
+                if data.get("type") != "user":
+                    continue
+
+                # Skip tool results
+                if is_tool_result_message(data):
+                    continue
+
+                # Extract text content
+                message = data.get("message", {})
+                content = message.get("content", "")
+                text = extract_text_from_content(content)
+
+                # Skip boilerplate
+                if is_boilerplate_message(text):
+                    continue
+
+                # Skip empty messages
+                if not text.strip():
+                    continue
+
+                messages.append(text.strip())
+
+    except (FileNotFoundError, PermissionError):
+        return ""
+
+    return " | ".join(messages)
+
+
 def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
     """
     Parse first real user message from JSONL file, skipping tool results and boilerplate.
@@ -213,6 +271,9 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
     msg_count = count_messages(file_path)
     last_modified = file_path.stat().st_mtime
 
+    # Extract all user messages for deep search
+    full_content = extract_all_user_messages(file_path)
+
     return SessionData(
         session_id=session_id,
         cwd=cwd,
@@ -224,4 +285,5 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
         message_count=msg_count,
         file_path=file_path,
         last_modified=last_modified,
+        full_content=full_content,
     )

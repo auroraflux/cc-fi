@@ -26,6 +26,7 @@ class SessionData:
     message_count: int
     file_path: Path
     last_modified: float
+    full_content: str = ""  # All user messages for deep search
 
     @property
     def content_fingerprint(self) -> tuple[str, str, str]:
@@ -84,6 +85,7 @@ class SessionData:
             "message_count": self.message_count,
             "file_path": str(self.file_path),
             "last_modified": self.last_modified,
+            "full_content": self.full_content,
         }
 
     @classmethod
@@ -110,4 +112,5 @@ class SessionData:
             message_count=data["message_count"],
             file_path=Path(data["file_path"]),
             last_modified=data["last_modified"],
+            full_content=data.get("full_content", ""),  # Backwards compatible
         )
