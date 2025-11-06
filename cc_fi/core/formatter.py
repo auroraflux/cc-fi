@@ -8,16 +8,21 @@ from cc_fi.constants import (
     COLOR_BOLD,
     COLOR_GRAY,
     COLOR_GREEN,
+    COLOR_LAVENDER,
+    COLOR_MAUVE,
     COLOR_RESET,
     COLOR_YELLOW,
     ICON_PROJECT,
     ICON_FOLDER,
     ICON_CLOCK,
     ICON_COMMENT,
+    ICON_RECENT,
+    ICON_FIRST,
     ICON_BRANCH,
     MESSAGE_DETAIL_LENGTH,
     MESSAGE_PREVIEW_LENGTH,
-    MESSAGE_COLUMN_WIDTH,
+    FIRST_COLUMN_WIDTH,
+    RECENT_COLUMN_WIDTH,
     PATH_COLUMN_WIDTH,
     PROJECT_COLUMN_WIDTH,
     TIME_COLUMN_WIDTH,
@@ -99,20 +104,23 @@ def format_list_row(session: SessionData) -> str:
     path = shorten_path(session.cwd)[:PATH_COLUMN_WIDTH].ljust(PATH_COLUMN_WIDTH)
     time_str = format_timestamp(session.timestamp).ljust(TIME_COLUMN_WIDTH)
 
-    # Use first message, fall back to last message if empty
-    msg_to_display = session.first_message.strip()
-    if not msg_to_display:
-        msg_to_display = session.last_message.strip()
-    if not msg_to_display:
-        msg_to_display = "(no messages)"
+    # Extract recent and first messages
+    recent_msg = session.last_message.strip() if session.last_message else ""
+    if not recent_msg:
+        recent_msg = "(no recent message)"
+    recent = truncate_message(recent_msg, RECENT_COLUMN_WIDTH)
 
-    message = truncate_message(msg_to_display, MESSAGE_COLUMN_WIDTH)
+    first_msg = session.first_message.strip() if session.first_message else ""
+    if not first_msg:
+        first_msg = "(no first message)"
+    first = truncate_message(first_msg, FIRST_COLUMN_WIDTH)
 
     return (
         f"{COLOR_GREEN}{project}{COLOR_RESET}  "
         f"{COLOR_BLUE}{path}{COLOR_RESET}  "
         f"{COLOR_YELLOW}{time_str}{COLOR_RESET}  "
-        f"{COLOR_GRAY}{message}{COLOR_RESET}"
+        f"{COLOR_MAUVE}{recent}{COLOR_RESET}  "
+        f"{COLOR_LAVENDER}{first}{COLOR_RESET}"
     )
 
 
@@ -127,13 +135,15 @@ def format_list_header() -> str:
     project = f"{ICON_PROJECT} PROJECT".ljust(PROJECT_COLUMN_WIDTH)
     path = f"{ICON_FOLDER} PATH".ljust(PATH_COLUMN_WIDTH)
     time_str = f"{ICON_CLOCK} TIME".ljust(TIME_COLUMN_WIDTH)
-    message = f"{ICON_COMMENT} FIRST MESSAGE"
+    recent = f"{ICON_RECENT} RECENT".ljust(RECENT_COLUMN_WIDTH)
+    first = f"{ICON_FIRST} FIRST"
 
     return (
         f"{COLOR_BOLD}{COLOR_GREEN}{project}{COLOR_RESET}  "
         f"{COLOR_BOLD}{COLOR_BLUE}{path}{COLOR_RESET}  "
         f"{COLOR_BOLD}{COLOR_YELLOW}{time_str}{COLOR_RESET}  "
-        f"{COLOR_BOLD}{COLOR_GRAY}{message}{COLOR_RESET}"
+        f"{COLOR_BOLD}{COLOR_MAUVE}{recent}{COLOR_RESET}  "
+        f"{COLOR_BOLD}{COLOR_LAVENDER}{first}{COLOR_RESET}"
     )
 
 
@@ -148,13 +158,15 @@ def format_header_separator() -> str:
     project_sep = "─" * PROJECT_COLUMN_WIDTH
     path_sep = "─" * PATH_COLUMN_WIDTH
     time_sep = "─" * TIME_COLUMN_WIDTH
-    message_sep = "─" * MESSAGE_COLUMN_WIDTH
+    recent_sep = "─" * RECENT_COLUMN_WIDTH
+    first_sep = "─" * FIRST_COLUMN_WIDTH
 
     return (
         f"{COLOR_GREEN}{project_sep}{COLOR_RESET}  "
         f"{COLOR_BLUE}{path_sep}{COLOR_RESET}  "
         f"{COLOR_YELLOW}{time_sep}{COLOR_RESET}  "
-        f"{COLOR_GRAY}{message_sep}{COLOR_RESET}"
+        f"{COLOR_MAUVE}{recent_sep}{COLOR_RESET}  "
+        f"{COLOR_LAVENDER}{first_sep}{COLOR_RESET}"
     )
 
 

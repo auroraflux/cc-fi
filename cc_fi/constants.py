@@ -17,9 +17,10 @@ MESSAGE_DETAIL_LENGTH = 200
 
 # Display settings
 PROJECT_COLUMN_WIDTH = 20
-PATH_COLUMN_WIDTH = 50  # Increased for full-width layout
+PATH_COLUMN_WIDTH = 40  # Reduced to fit RECENT column
 TIME_COLUMN_WIDTH = 16
-MESSAGE_COLUMN_WIDTH = 80  # Increased for full-width layout
+RECENT_COLUMN_WIDTH = 40  # New column for recent message
+FIRST_COLUMN_WIDTH = 50  # Renamed from MESSAGE_COLUMN_WIDTH, reduced
 
 # ANSI color codes (per CLAUDE.md: no emoji, ASCII/ANSI allowed)
 COLOR_GREEN = "\033[32m"

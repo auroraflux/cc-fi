@@ -126,7 +126,7 @@ def test_fzf_preview_colors_match_columns():
 
 def test_list_header_has_icons_and_path():
     """Test that list headers have NerdFont icons and use PATH terminology."""
-    from cc_fi.constants import ICON_PROJECT, ICON_FOLDER, ICON_CLOCK, ICON_COMMENT
+    from cc_fi.constants import ICON_PROJECT, ICON_FOLDER, ICON_CLOCK, ICON_RECENT, ICON_FIRST
     from cc_fi.core.formatter import format_list_header
 
     header = format_list_header()
@@ -135,16 +135,19 @@ def test_list_header_has_icons_and_path():
     assert ICON_PROJECT in header
     assert ICON_FOLDER in header
     assert ICON_CLOCK in header
-    assert ICON_COMMENT in header
+    assert ICON_RECENT in header
+    assert ICON_FIRST in header
 
     # Check terminology
     assert "PROJECT" in header
     assert "PATH" in header
     assert "TIME" in header
-    assert "FIRST MESSAGE" in header
+    assert "RECENT" in header
+    assert "FIRST" in header
 
-    # Ensure old DIRECTORY terminology is gone
+    # Ensure old DIRECTORY and "FIRST MESSAGE" terminology is gone
     assert "DIRECTORY" not in header
+    assert "FIRST MESSAGE" not in header
 
 
 def test_instruction_header_format():
