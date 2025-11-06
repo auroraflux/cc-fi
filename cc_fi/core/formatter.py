@@ -1,6 +1,7 @@
 """Output formatting for sessions."""
 
 import shutil
+import textwrap
 from datetime import datetime
 from pathlib import Path
 
@@ -94,6 +95,33 @@ def truncate_message(message: str, max_length: int) -> str:
         return normalized
 
     return normalized[: max_length - 3] + "..."
+
+
+def wrap_colored_text(text: str, color: str, width: int) -> str:
+    """
+    Wrap text to specified width while preserving color codes.
+
+    @param text Text to wrap
+    @param color ANSI color code to apply to wrapped lines
+    @param width Maximum width per line
+    @returns Multi-line string with color codes preserved
+    @complexity O(n) where n is text length
+    @pure true
+    """
+    normalized = normalize_whitespace(text)
+
+    # Wrap the text
+    wrapped_lines = textwrap.wrap(
+        normalized,
+        width=width,
+        break_long_words=False,
+        break_on_hyphens=False
+    )
+
+    # Apply color to each line
+    colored_lines = [f"{color}{line}{COLOR_RESET}" for line in wrapped_lines]
+
+    return "\n".join(colored_lines)
 
 
 def format_timestamp(dt: datetime) -> str:
@@ -235,13 +263,24 @@ def format_fzf_preview(session: SessionData) -> str:
 
     @param session SessionData to format
     @returns Multi-line formatted string
-    @complexity O(1)
-    @pure true
+    @complexity O(n) where n is message length
+    @pure false - reads terminal size
     """
+    try:
+        terminal_width = shutil.get_terminal_size().columns
+    except Exception:
+        terminal_width = 120  # Fallback width
+
     short_path = shorten_path(session.cwd)
     time_str = format_timestamp(session.timestamp)
-    first_msg = truncate_message(session.first_message, MESSAGE_DETAIL_LENGTH)
-    last_msg = truncate_message(session.last_message, MESSAGE_DETAIL_LENGTH)
+
+    # Truncate to max detail length, then wrap to terminal width
+    first_msg_truncated = truncate_message(session.first_message, MESSAGE_DETAIL_LENGTH)
+    last_msg_truncated = truncate_message(session.last_message, MESSAGE_DETAIL_LENGTH)
+
+    # Wrap the messages to terminal width with color
+    first_msg_wrapped = wrap_colored_text(first_msg_truncated, COLOR_LAVENDER, terminal_width)
+    last_msg_wrapped = wrap_colored_text(last_msg_truncated, COLOR_MAUVE, terminal_width)
 
     # Start with project, path, time (matching table order)
     # Values are colored to match their header color for easy visual correlation
@@ -260,10 +299,10 @@ def format_fzf_preview(session: SessionData) -> str:
             f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {COLOR_YELLOW}{time_str}{COLOR_RESET}",
             "",
             f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
-            f"{COLOR_MAUVE}{last_msg}{COLOR_RESET}",
+            last_msg_wrapped,
             "",
             f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:{COLOR_RESET}",
-            f"{COLOR_LAVENDER}{first_msg}{COLOR_RESET}",
+            first_msg_wrapped,
             "",
             f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}     {COLOR_GRAY}{session.session_id}{COLOR_RESET}",
             f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {COLOR_GRAY}{session.message_count}{COLOR_RESET}",
