@@ -1,0 +1,188 @@
+"""Parse Claude Code session JSONL files."""
+
+import json
+from datetime import datetime
+from pathlib import Path
+
+
+def extract_project_name(cwd: str) -> str:
+    """
+    Extract project name from working directory path.
+
+    @param cwd Working directory path
+    @returns Last component of path (project name)
+    @complexity O(1)
+    @pure true
+    """
+    return Path(cwd).name
+
+
+def is_boilerplate_message(text: str) -> bool:
+    """
+    Check if message is Claude Code boilerplate (continuation or commands).
+
+    Uses centralized filter registry for pattern matching.
+
+    @param text Message text to check
+    @returns True if message is boilerplate
+    @complexity O(n) where n is number of patterns
+    @pure true
+    """
+    from cc_fi.core.filters import is_boilerplate
+
+    return is_boilerplate(text)
+
+
+def extract_text_from_content(content) -> str:
+    """
+    Extract text from message content (handles both old and new formats).
+
+    @param content Message content (string or list of content blocks)
+    @returns Extracted text string
+    @complexity O(n) where n is number of content blocks
+    @pure true
+    """
+    if isinstance(content, str):
+        return content
+
+    if isinstance(content, list):
+        text_parts = []
+        for item in content:
+            if isinstance(item, dict) and item.get("type") == "text":
+                text_parts.append(item.get("text", ""))
+        return " ".join(text_parts)
+
+    return ""
+
+
+def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
+    """
+    Parse first real user message from JSONL file, skipping boilerplate.
+
+    @param file_path Path to session file
+    @returns Tuple of (first_user_data, message_content)
+    @throws FileNotFoundError When file doesn't exist
+    @throws json.JSONDecodeError When malformed JSON
+    @throws ValueError When no user messages found
+    @complexity O(n) worst case - reads until first user message
+    @pure false - reads filesystem
+    """
+    first_found = None
+
+    with file_path.open("r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+
+            try:
+                data = json.loads(line)
+                if data.get("type") == "user":
+                    message = data.get("message", {})
+                    content = message.get("content", "")
+                    text = extract_text_from_content(content)
+
+                    # Save first user message as fallback
+                    if first_found is None:
+                        first_found = (data, text)
+
+                    # Skip boilerplate messages, keep looking
+                    if is_boilerplate_message(text):
+                        continue
+
+                    # Found a real user message
+                    return data, text
+
+            except json.JSONDecodeError:
+                continue
+
+    # Return first message found, even if it's boilerplate
+    if first_found:
+        return first_found
+
+    raise ValueError(f"No user messages found in: {file_path}")
+
+
+def parse_last_user_message(file_path: Path, max_lines: int) -> str:
+    """
+    Parse last user message from JSONL file.
+
+    @param file_path Path to session file
+    @param max_lines Maximum lines to read from end
+    @returns Last user message content
+    @complexity O(n) where n is max_lines
+    @pure false - reads filesystem
+    """
+    from cc_fi.constants import MAX_TAIL_LINES_FOR_LAST_MSG
+
+    with file_path.open("r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    tail_lines = lines[-max_lines:] if len(lines) > max_lines else lines
+
+    for line in reversed(tail_lines):
+        try:
+            data = json.loads(line)
+            if data.get("type") == "user":
+                content = data.get("message", {}).get("content", "")
+                text = extract_text_from_content(content)
+                return text
+        except json.JSONDecodeError:
+            continue
+
+    return ""
+
+
+def count_messages(file_path: Path) -> int:
+    """
+    Count total messages in session file.
+
+    @param file_path Path to session file
+    @returns Number of lines (messages) in file
+    @complexity O(1) - uses wc-like approach
+    @pure false - reads filesystem
+    """
+    with file_path.open("r", encoding="utf-8") as f:
+        return sum(1 for _ in f)
+
+
+def extract_metadata_from_file(file_path: Path) -> "SessionData":
+    """
+    Extract all metadata from a Claude Code session file.
+
+    @param file_path Path to .jsonl session file
+    @returns SessionData with extracted metadata
+    @throws FileNotFoundError When file doesn't exist
+    @throws json.JSONDecodeError When malformed JSON
+    @throws KeyError When required fields missing
+
+    @complexity O(n) where n is lines in file
+    @pure false - reads filesystem
+    """
+    from cc_fi.constants import MAX_TAIL_LINES_FOR_LAST_MSG
+    from cc_fi.models.session import SessionData
+
+    first_data, first_msg = parse_first_user_message(file_path)
+
+    session_id = first_data["sessionId"]
+    cwd = first_data["cwd"]
+    project_name = extract_project_name(cwd)
+    git_branch = first_data.get("gitBranch", "")
+    timestamp_str = first_data["timestamp"]
+    timestamp = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+
+    last_msg = parse_last_user_message(file_path, MAX_TAIL_LINES_FOR_LAST_MSG)
+    msg_count = count_messages(file_path)
+    last_modified = file_path.stat().st_mtime
+
+    return SessionData(
+        session_id=session_id,
+        cwd=cwd,
+        project_name=project_name,
+        git_branch=git_branch,
+        timestamp=timestamp,
+        first_message=first_msg,
+        last_message=last_msg,
+        message_count=msg_count,
+        file_path=file_path,
+        last_modified=last_modified,
+    )
