@@ -274,14 +274,19 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
     # Extract all user messages for deep search
     full_content = extract_all_user_messages(file_path)
 
+    # Truncate messages for display (full content is in full_content field)
+    from cc_fi.constants import MESSAGE_PREVIEW_LENGTH
+    first_msg_preview = first_msg[:MESSAGE_PREVIEW_LENGTH] if len(first_msg) > MESSAGE_PREVIEW_LENGTH else first_msg
+    last_msg_preview = last_msg[:MESSAGE_PREVIEW_LENGTH] if len(last_msg) > MESSAGE_PREVIEW_LENGTH else last_msg
+
     return SessionData(
         session_id=session_id,
         cwd=cwd,
         project_name=project_name,
         git_branch=git_branch,
         timestamp=timestamp,
-        first_message=first_msg,
-        last_message=last_msg,
+        first_message=first_msg_preview,
+        last_message=last_msg_preview,
         message_count=msg_count,
         file_path=file_path,
         last_modified=last_modified,
