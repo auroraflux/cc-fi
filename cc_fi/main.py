@@ -92,23 +92,51 @@ def handle_interactive_mode() -> None:
         cwd_exists = Path(selected.cwd).exists()
 
         if cwd_exists:
+            # Directory exists - simple resume
             resume_cmd = f'cd "{selected.cwd}" && claude -r {selected.session_id}'
-        else:
-            # Directory no longer exists - show warning
-            print(f"\nWarning: Original directory no longer exists: {selected.cwd}")
-            print("Claude Code will restore the session context from any directory.\n")
-            resume_cmd = f'claude -r {selected.session_id}'
+            print(f"\nWill execute: {resume_cmd}\n")
 
-        # Prompt user to resume
-        try:
-            response = input("Resume this session? (Y/n): ").strip().lower()
-            if response in ('', 'y', 'yes'):
-                # Execute resume command
-                os.system(resume_cmd)
-            else:
-                print("Cancelled.")
-        except (KeyboardInterrupt, EOFError):
-            print("\nCancelled.")
+            try:
+                response = input("Resume this session? (Y/n): ").strip().lower()
+                if response in ('', 'y', 'yes'):
+                    os.system(resume_cmd)
+                else:
+                    print("Cancelled.")
+            except (KeyboardInterrupt, EOFError):
+                print("\nCancelled.")
+        else:
+            # Directory no longer exists - offer options
+            print(f"\nWarning: Original directory no longer exists: {selected.cwd}")
+            print("\nClaude Code can restore the session, but you need to specify where to run it.")
+            print("Note: After resuming, you may need to navigate to the correct working directory.\n")
+
+            try:
+                alt_dir = input("Enter directory path (or press Enter to run from current directory): ").strip()
+
+                if alt_dir:
+                    # User specified an alternative directory
+                    alt_path = Path(alt_dir).expanduser().resolve()
+                    if alt_path.exists() and alt_path.is_dir():
+                        resume_cmd = f'cd "{alt_path}" && claude -r {selected.session_id}'
+                    else:
+                        print(f"Error: Directory does not exist: {alt_path}")
+                        print("Cancelled.")
+                        return
+                else:
+                    # Run from current directory
+                    current_dir = Path.cwd()
+                    resume_cmd = f'claude -r {selected.session_id}'
+                    print(f"\n(Will run from: {current_dir})")
+
+                print(f"\nWill execute: {resume_cmd}\n")
+
+                response = input("Resume? (Y/n): ").strip().lower()
+                if response in ('', 'y', 'yes'):
+                    os.system(resume_cmd)
+                else:
+                    print("Cancelled.")
+            except (KeyboardInterrupt, EOFError):
+                print("\nCancelled.")
 
 
 def handle_list_mode(search_term: str, force_rebuild: bool) -> None:
