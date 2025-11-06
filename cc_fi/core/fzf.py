@@ -25,9 +25,14 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: session_id|visible_row
-    - Search operates on visible columns only (fast, clean display)
-    - Deep search context shown in preview pane when query present
+    Format: session_id|visible_row|full_content
+    - Column 1: session_id (hidden, for selection)
+    - Column 2: visible_row (displayed table row)
+    - Column 3: full_content (hidden, for deep search)
+
+    fzf searches columns 2 and 3, but only displays column 2.
+    This enables deep search across entire conversation history while
+    maintaining clean visual display.
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
@@ -44,16 +49,18 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     instruction_lines = instruction_header.split("\n")
 
     rows = [
-        f"INSTRUCTION1|{instruction_lines[0]}",
-        f"INSTRUCTION2|{instruction_lines[1]}",
-        f"HEADER|{format_list_header()}",
-        f"SEPARATOR|{format_header_separator()}",
+        f"INSTRUCTION1|{instruction_lines[0]}|",
+        f"INSTRUCTION2|{instruction_lines[1]}|",
+        f"HEADER|{format_list_header()}|",
+        f"SEPARATOR|{format_header_separator()}|",
     ]
 
     for session in sessions:
         formatted = format_list_row(session)
-        # Clean single-line format (no hidden content)
-        rows.append(f"{session.session_id}|{formatted}")
+        # Add full_content as third field for deep search (hidden from display)
+        # Replace pipe characters to avoid breaking delimiter-based parsing
+        full_content_safe = session.full_content.replace("|", " ")
+        rows.append(f"{session.session_id}|{formatted}|{full_content_safe}")
 
     return "\n".join(rows)
 
@@ -97,7 +104,7 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
         "fzf",
         "--ansi",
         "--delimiter=|",
-        "--with-nth=2..",
+        "--with-nth=2",  # Display only column 2 (visible row), but search all columns
         "--header-lines=4",  # Skip instruction (2 lines) + column header + separator
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
