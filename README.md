@@ -254,19 +254,70 @@ Where:
 - **Cause**: NerdFonts are designed to be monospace-width
 - **Solution**: Use icons from the same category (all `nf-fa-*` or all `nf-cod-*`)
 
-#### Testing Icon Changes
+#### Modifying Icons - Complete Procedure
 
-After modifying icons:
+When changing icon definitions in `cc_fi/constants.py`:
 
-1. **Visual test** - Run the tool and check appearance:
+**CRITICAL**: Use the Edit tool or manually edit with a text editor that preserves escape sequences. **DO NOT** use Python scripts with string operations - they will write literal Unicode characters instead of escape sequences.
+
+**Correct format**:
+```python
+ICON_FIRST = "\uf0e0"    # U+F0E0 (nf-fa-envelope)
+```
+
+**Wrong format** (will break):
+```python
+ICON_FIRST = ""    # Literal character, not escape sequence
+```
+
+**After modifying icons:**
+
+1. **Verify the file** - Check that escape sequences are preserved:
    ```bash
-   python3 -m cc_fi.main | head -3
-   python3 -m cc_fi.main --preview <session-id>
+   cat cc_fi/constants.py | rg 'ICON_FIRST'
+   # Should show: ICON_FIRST = "\uf0e0"
+   # NOT: ICON_FIRST = ""
    ```
 
-2. **Check alignment** - Icons should align with their columns
-3. **Test in interactive mode** - `cc-fi -i` to see icons in fzf
-4. **Verify color rendering** - Icons inherit the color of their context
+2. **Restart your terminal** - Python modules are cached, you must restart:
+   - Close and reopen your terminal session
+   - OR deactivate and reactivate your venv
+   - OR use `hash -r` to clear bash command cache
+
+3. **Clear the cache**:
+   ```bash
+   cc-fi --clear-cache
+   ```
+
+4. **Rebuild cache**:
+   ```bash
+   cc-fi -r
+   ```
+
+5. **Test visual appearance**:
+   ```bash
+   # Test list mode
+   python3 -m cc_fi.main | head -3
+
+   # Test preview mode
+   python3 -m cc_fi.main --preview <session-id>
+
+   # Test interactive mode
+   cc-fi -i
+   ```
+
+6. **Verify in all contexts**:
+   - Check table headers show correct icons
+   - Check alignment in columns
+   - Verify icons in preview pane
+   - Test color rendering (icons inherit context color)
+
+**If icons still don't update:**
+- Confirm escape sequences in constants.py (not literal characters)
+- Restart terminal (Python module caching)
+- Check terminal font has NerdFont glyphs
+- Try `python3 -c "from cc_fi.constants import ICON_FIRST; print(repr(ICON_FIRST))"`
+  Should print: `'\uf0e0'` not a rendered character
 
 #### Icon Selection Guidelines
 
