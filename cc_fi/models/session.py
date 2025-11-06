@@ -21,13 +21,13 @@ class SessionData:
     project_name: str
     git_branch: str
     timestamp: datetime
-    first_message: str  # Truncated (60 chars) for table display
-    last_message: str  # Truncated (60 chars) for table display
+    first_message: str  # Truncated (60 chars) for backwards compatibility
+    last_message: str  # Truncated (60 chars) for backwards compatibility
     message_count: int
     file_path: Path
     last_modified: float
-    first_message_full: str = ""  # Full text for preview (400 chars)
-    last_message_full: str = ""  # Full text for preview (400 chars)
+    first_message_full: str = ""  # Longer text (400 chars) for table and preview display
+    last_message_full: str = ""  # Longer text (400 chars) for table and preview display
     full_content: str = ""  # All user messages for deep search
 
     @property

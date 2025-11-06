@@ -258,13 +258,15 @@ def format_list_row(session: SessionData) -> str:
     path = shorten_path(session.cwd)[:PATH_COLUMN_WIDTH].ljust(PATH_COLUMN_WIDTH)
     time_str = format_timestamp(session.timestamp).ljust(TIME_COLUMN_WIDTH)
 
-    # Extract recent and first messages
-    recent_msg = session.last_message.strip() if session.last_message else ""
+    # Extract recent and first messages - use _full fields for table display
+    # (first_message/last_message are pre-truncated to 60 chars, but dynamic
+    # columns can be much wider, so use the 400-char _full fields instead)
+    recent_msg = session.last_message_full.strip() if session.last_message_full else ""
     if not recent_msg:
         recent_msg = "(no recent message)"
     recent = truncate_message(recent_msg, recent_width).ljust(recent_width)
 
-    first_msg = session.first_message.strip() if session.first_message else ""
+    first_msg = session.first_message_full.strip() if session.first_message_full else ""
     if not first_msg:
         first_msg = "(no first message)"
     first = truncate_message(first_msg, first_width).ljust(first_width)
