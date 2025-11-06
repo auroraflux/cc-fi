@@ -25,14 +25,14 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: session_id|formatted_display_with_hidden_searchable
+    Format: session_id|formatted_display|searchable_content
 
-    We use a two-column pipe-delimited format:
+    We use a three-column pipe-delimited format:
     - Column 1: session_id (hidden)
-    - Column 2: formatted_row + concealed searchable content (displayed + searchable)
+    - Column 2: formatted_row (displayed)
+    - Column 3: searchable content (hidden)
 
-    The searchable content is made invisible using ANSI concealment but remains
-    searchable by fzf. We use --with-nth=2 to display only column 2.
+    We'll display only column 2 but keep column 3 for searching.
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
@@ -62,13 +62,15 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
         # Get searchable content - combine formatted plain text + conversation content
         formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
         content_snippet = session.full_content[:500].replace("\n", " ").replace("\r", " ").replace("|", " ")
-        searchable = f" {formatted_plain} {content_snippet}"
+        searchable = f"{formatted_plain} {content_snippet}"
 
-        # Conceal the searchable content so it's invisible but still searchable
-        hidden_searchable = f"\x1b[8m{searchable}\x1b[0m"
+        # Position searchable content far off-screen using spaces
+        # The --no-hscroll flag prevents fzf from scrolling to show it
+        # Using 200 spaces to ensure content is beyond typical terminal width
+        spacing = " " * 200
 
-        # Column 2 contains visible formatted + concealed searchable
-        display_with_search = f"{formatted}{hidden_searchable}"
+        # Build the display string with searchable content positioned off-screen
+        display_with_search = f"{formatted}{spacing}{searchable}"
 
         # Two-column format: session_id|display_with_search
         row = f"{session.session_id}|{display_with_search}"
@@ -127,6 +129,8 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
         f"--preview-window=down:{FZF_PREVIEW_HEIGHT_PERCENT}%",
         "--preview",
         preview_cmd,
+        "--no-hscroll",  # Prevent horizontal scrolling
+        "--tabstop=1",  # Minimal tab width to reduce spacing
     ]
 
     try:
