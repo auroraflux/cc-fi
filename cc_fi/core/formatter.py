@@ -220,10 +220,10 @@ def format_fzf_preview(session: SessionData) -> str:
             f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {time_str}",
             f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {session.message_count}",
             "",
-            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} First:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:{COLOR_RESET}",
             first_msg,
             "",
-            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Recent:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
             last_msg,
         ]
     )
