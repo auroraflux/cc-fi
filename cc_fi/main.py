@@ -87,20 +87,28 @@ def handle_interactive_mode() -> None:
     selected = run_fzf_selection(sessions)
 
     if selected:
+        import os
         from pathlib import Path
         cwd_exists = Path(selected.cwd).exists()
 
         if cwd_exists:
             resume_cmd = f'cd "{selected.cwd}" && claude -r {selected.session_id}'
-            print("\nTo resume this session, run:")
-            print(f"\n  {resume_cmd}\n")
         else:
-            # Directory no longer exists - show warning and alternative
+            # Directory no longer exists - show warning
             print(f"\nWarning: Original directory no longer exists: {selected.cwd}")
-            print("\nTo resume this session anyway, run:")
-            print(f"\n  claude -r {selected.session_id}\n")
-            print("(Claude Code will restore the session context, but you may need to")
-            print("navigate to a different directory or recreate the original path.)\n")
+            print("Claude Code will restore the session context from any directory.\n")
+            resume_cmd = f'claude -r {selected.session_id}'
+
+        # Prompt user to resume
+        try:
+            response = input("Resume this session? (Y/n): ").strip().lower()
+            if response in ('', 'y', 'yes'):
+                # Execute resume command
+                os.system(resume_cmd)
+            else:
+                print("Cancelled.")
+        except (KeyboardInterrupt, EOFError):
+            print("\nCancelled.")
 
 
 def handle_list_mode(search_term: str, force_rebuild: bool) -> None:
