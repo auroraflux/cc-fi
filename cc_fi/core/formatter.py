@@ -110,12 +110,12 @@ def format_list_row(session: SessionData) -> str:
     recent_msg = session.last_message.strip() if session.last_message else ""
     if not recent_msg:
         recent_msg = "(no recent message)"
-    recent = truncate_message(recent_msg, RECENT_COLUMN_WIDTH)
+    recent = truncate_message(recent_msg, RECENT_COLUMN_WIDTH).ljust(RECENT_COLUMN_WIDTH)
 
     first_msg = session.first_message.strip() if session.first_message else ""
     if not first_msg:
         first_msg = "(no first message)"
-    first = truncate_message(first_msg, FIRST_COLUMN_WIDTH)
+    first = truncate_message(first_msg, FIRST_COLUMN_WIDTH).ljust(FIRST_COLUMN_WIDTH)
 
     return (
         f"{COLOR_GREEN}{project}{COLOR_RESET}  "
