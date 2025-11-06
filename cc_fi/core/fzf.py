@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from cc_fi.constants import FZF_HEIGHT_PERCENT, FZF_PREVIEW_WIDTH_PERCENT
+from cc_fi.constants import FZF_HEIGHT_PERCENT, FZF_PREVIEW_HEIGHT_PERCENT
 from cc_fi.core.formatter import format_fzf_preview, format_list_row
 from cc_fi.models.session import SessionData
 
@@ -86,7 +86,7 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
         "--header-lines=2",
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
-        f"--preview-window=right:{FZF_PREVIEW_WIDTH_PERCENT}%",
+        f"--preview-window=down:{FZF_PREVIEW_HEIGHT_PERCENT}%",
         "--preview",
         preview_cmd,
     ]

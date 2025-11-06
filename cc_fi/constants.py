@@ -17,9 +17,9 @@ MESSAGE_DETAIL_LENGTH = 200
 
 # Display settings
 PROJECT_COLUMN_WIDTH = 20
-PATH_COLUMN_WIDTH = 45
+PATH_COLUMN_WIDTH = 50  # Increased for full-width layout
 TIME_COLUMN_WIDTH = 16
-MESSAGE_COLUMN_WIDTH = 60
+MESSAGE_COLUMN_WIDTH = 80  # Increased for full-width layout
 
 # ANSI color codes (per CLAUDE.md: no emoji, ASCII/ANSI allowed)
 COLOR_GREEN = "\033[32m"
@@ -33,7 +33,7 @@ COLOR_RESET = "\033[0m"
 ICON_BULLET = " "  # U+F444 (nf-oct-dot_fill) - consistent bullet style
 
 # FZF settings
-FZF_PREVIEW_WIDTH_PERCENT = 50
+FZF_PREVIEW_HEIGHT_PERCENT = 40  # Preview pane height (bottom position)
 FZF_HEIGHT_PERCENT = 100
 
 # Performance limits
