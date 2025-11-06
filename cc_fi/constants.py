@@ -43,7 +43,7 @@ ICON_CLOCK = ""      # U+F017 (nf-fa-clock)
 ICON_COMMENT = ""  # U+EA6B (nf-cod-comment)
 ICON_BRANCH = ""    # U+E725 (nf-dev-git_branch)
 ICON_RECENT = ""  # U+F27B (nf-fa-comment_dots)
-ICON_FIRST = ""    # U+EDEF (nf-fa-dice_one)
+ICON_FIRST = ""    # U+F0E0 (nf-fa-envelope)
 ICON_SESSION = "\uf15c"  # U+F15C (nf-fa-file_text)
 
 
