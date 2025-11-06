@@ -1,12 +1,24 @@
 # cc-fi
 
-Find and resume Claude Code sessions across all directories.
+**Claude Code Session Finder** - Fast, interactive browser for finding and resuming Claude Code sessions across all directories.
+
+## Features
+
+- **Interactive fuzzy search** - Type to filter sessions by project, path, or any message content
+- **Deep search** - Searches entire conversation history, not just first/last messages
+- **Live preview** - See session details with syntax highlighting as you browse
+- **Fuzzy match highlighting** - Visual feedback showing exactly what matched your query
+- **Smart resume** - One-step session resumption with directory handling
+- **Cached indexing** - Sub-10ms search after initial scan
+- **Dynamic columns** - Table adapts to terminal width for maximum content visibility
 
 ## Requirements
 
 - Python 3.12+
-- fzf (for interactive mode)
-- uv (Python package manager)
+- [fzf](https://github.com/junegunn/fzf) (for interactive mode)
+- [fd](https://github.com/sharkdp/fd) (for directory browser)
+- [uv](https://github.com/astral-sh/uv) (Python package manager)
+- [eza](https://github.com/eza-community/eza) (optional, for colored directory previews)
 
 ## Installation
 
@@ -24,12 +36,49 @@ source .venv/bin/activate
 uv pip install -e .
 ```
 
+### Installing Dependencies
+
+**macOS (Homebrew):**
+```bash
+brew install fzf fd eza
+```
+
+**Linux (Debian/Ubuntu):**
+```bash
+apt install fzf fd-find
+cargo install eza  # or download from GitHub releases
+```
+
 ## Usage
 
-Interactive browser (default):
+### Interactive Mode (Default)
+
 ```bash
 cc-fi
 ```
+
+**Interactive controls:**
+- **Type** - Filter sessions by any content (project, path, messages)
+- **↑/↓** - Navigate through sessions
+- **Enter** - Select session to resume
+- **Esc** - Cancel
+
+**Preview pane features:**
+- Shows project name, path, git branch, timestamp
+- Displays first and last messages (up to 400 chars each)
+- **Fuzzy highlighting** - Matched characters appear in red (same as table)
+- **Deep search mode** - When typing, shows matching snippets from entire conversation
+
+**Resume workflow:**
+1. Select a session
+2. Prompt: "Resume this session? (Y/n):"
+3. Press Enter (or Y) to launch Claude Code
+4. If original directory missing, choose:
+   - Browse for new directory (fzf directory picker)
+   - Run from current directory
+   - Cancel
+
+### List Mode
 
 List all sessions:
 ```bash
@@ -41,6 +90,8 @@ Search sessions:
 cc-fi -l search-term
 ```
 
+### Cache Management
+
 Force cache rebuild:
 ```bash
 cc-fi -r
@@ -51,72 +102,161 @@ Clear cache:
 cc-fi --clear-cache
 ```
 
+Enable verbose logging:
+```bash
+cc-fi -v
+```
+
 ## Configuration
 
-Cache location: `/tmp/cc-fi-cache.json`
-Cache TTL: 30 seconds
-
-To change cache settings, edit `cc_fi/constants.py`:
+**Cache settings** (`cc_fi/constants.py`):
 ```python
-CACHE_TTL_SECONDS = 30
-CACHE_FILE_PATH = Path("/tmp/cc-fi-cache.json")
+CACHE_TTL_SECONDS = 30  # Cache lifetime
+CACHE_FILE_PATH = Path("/tmp/cc-fi-cache.json")  # Cache location
 ```
 
-## Development
-
-Run tests:
-```bash
-source .venv/bin/activate
-pytest tests/unit/ -v
+**Display settings** (`cc_fi/constants.py`):
+```python
+PROJECT_COLUMN_WIDTH = 20
+PATH_COLUMN_WIDTH = 40
+TIME_COLUMN_WIDTH = 16
+MESSAGE_PREVIEW_LENGTH = 60  # Table truncation
+MESSAGE_DETAIL_LENGTH = 400  # Preview/full text length
+MAX_PREVIEW_MATCHES = 5  # Deep search results shown
 ```
 
-Format and lint:
-```bash
-ruff check cc_fi/
-mypy cc_fi/
-```
+## How It Works
+
+### Architecture
+
+1. **Scanner** - Reads `~/.claude/projects/*.jsonl` session files
+2. **Parser** - Extracts metadata and indexes full conversation content
+3. **Cache** - Stores parsed sessions for 30 seconds (invalidates on new sessions)
+4. **Formatter** - Renders table and preview with ANSI colors
+5. **FZF Integration** - Pipes formatted data to fzf with live preview
+
+### Deep Search
+
+cc-fi indexes **entire conversation history**, not just first/last messages:
+
+**Indexed fields:**
+- Project name
+- Working directory path
+- Git branch
+- All user messages (full content)
+- Session metadata
+
+**Search modes:**
+
+1. **Browse mode** (no query):
+   - Shows first and last messages
+   - Full metadata display
+
+2. **Search mode** (typing query):
+   - Filters table by fuzzy match
+   - Preview shows matching snippets with context
+   - Highlights matched characters in red
+   - Shows up to 5 matches with 50-char context each
+
+**Example:** Type "refactor api" to find any session where you discussed refactoring an API, even if that was in the middle of the conversation.
+
+### Performance
+
+- **First run**: ~1-2 seconds for 100+ sessions
+- **Cached runs**: <10ms (instant)
+- **Cache size**: ~1-2MB per 100 sessions
+- **Search latency**: Real-time (fzf fuzzy matching)
+
+### Missing Directory Handling
+
+When a session's original directory no longer exists:
+
+1. **Warning displayed**: "Original directory no longer exists: /path"
+2. **Options menu**:
+   - **Browse** - Interactive directory picker (fd + fzf)
+     - Lists directories recursively
+     - Type to filter by path segments
+     - Preview shows directory contents
+     - No depth limit - find any subdirectory
+   - **Current** - Resume from current working directory
+   - **Cancel** - Exit without resuming
+
+Claude Code restores session context regardless of working directory, so resuming from a different location works correctly.
 
 ## Troubleshooting
 
-If no sessions found, check Claude Code installation:
+**No sessions found:**
 ```bash
-ls ~/.claude/projects
+ls ~/.claude/projects  # Verify Claude Code installation
 ```
 
-If fzf not found:
+**fzf not found:**
 ```bash
 brew install fzf  # macOS
 apt install fzf   # Linux
 ```
 
-If icons show as boxes, install a NerdFont:
+**Icons show as boxes:**
+
+Install a [NerdFont](https://www.nerdfonts.com/):
 ```bash
 brew install --cask font-hack-nerd-font  # macOS
 ```
 
-Or download from https://www.nerdfonts.com/
+Then configure your terminal to use the NerdFont.
 
-## How It Works
+**fd not found:**
+```bash
+brew install fd  # macOS
+apt install fd-find  # Linux (binary may be named fdfind)
+```
 
-cc-fi scans `~/.claude/projects/` for session files (`.jsonl`), extracts metadata and full conversation content, then caches results for 30 seconds. Interactive mode uses fzf for browsing with a preview pane.
+**eza not found (optional):**
 
-### Deep Search
+Directory previews fall back to `ls` if `eza` is unavailable. For colored previews:
+```bash
+brew install eza  # macOS
+cargo install eza  # Linux
+```
 
-cc-fi indexes the **entire conversation content** for each session, not just the first and last messages. This means you can search for any snippet from anywhere in your conversation history.
+## Development
 
-When you search in interactive mode, fzf searches:
-- Project name
-- Directory path
-- All user messages from the entire conversation
+**Setup:**
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e .
+```
 
-The full content is hidden but searchable - you only see the summary columns, but searching works across everything you've said in that session.
+**Run tests:**
+```bash
+pytest tests/unit/ -v
+```
 
-### Indexing Performance
+**Format and lint:**
+```bash
+ruff check cc_fi/
+mypy cc_fi/
+```
 
-- First run: ~1-2 seconds for 100+ sessions
-- Cache hits: <10ms (instant)
-- Cache size: ~1-2MB for 100 sessions
-- Cache TTL: 30 seconds
+**Project structure:**
+```
+cc-fi/
+├── cc_fi/
+│   ├── core/
+│   │   ├── cache.py       # Session caching with TTL
+│   │   ├── fzf.py         # FZF integration
+│   │   ├── formatter.py   # ANSI formatting and fuzzy highlighting
+│   │   ├── parser.py      # JSONL parsing and metadata extraction
+│   │   └── search.py      # Session filtering
+│   ├── models/
+│   │   └── session.py     # SessionData model
+│   ├── constants.py       # Configuration constants
+│   └── main.py            # CLI entry point
+├── tests/
+│   └── unit/              # Unit tests
+└── install.sh             # Installation script
+```
 
 ## License
 
