@@ -56,9 +56,11 @@ def get_dynamic_column_widths() -> tuple[int, int]:
     if remaining < 40:
         return (30, 30)
 
-    # Split remaining space: RECENT gets 40%, FIRST gets 60%
-    recent_width = int(remaining * 0.4)
-    first_width = remaining - recent_width - 2  # Subtract 2 for separator
+    # Split remaining space equally: RECENT and FIRST get 50% each
+    # This ensures first is never wider than recent
+    half_width = remaining // 2
+    recent_width = half_width
+    first_width = remaining - half_width - 2  # Subtract 2 for separator
 
     return (recent_width, first_width)
 
@@ -199,8 +201,8 @@ def format_list_header() -> str:
     project = f"{ICON_PROJECT} PROJECT".ljust(PROJECT_COLUMN_WIDTH)
     path = f"{ICON_FOLDER} PATH".ljust(PATH_COLUMN_WIDTH)
     time_str = f"{ICON_CLOCK} TIME".ljust(TIME_COLUMN_WIDTH)
-    recent = f"{ICON_RECENT} RECENT".ljust(recent_width)
-    first = f"{ICON_FIRST} FIRST".ljust(first_width)
+    recent = f"{ICON_RECENT} RECENT MSG".ljust(recent_width)
+    first = f"{ICON_FIRST} FIRST MSG".ljust(first_width)
 
     return (
         f"{COLOR_BOLD}{COLOR_GREEN}{project}{COLOR_RESET}  "
@@ -298,10 +300,10 @@ def format_fzf_preview(session: SessionData) -> str:
         [
             f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {COLOR_YELLOW}{time_str}{COLOR_RESET}",
             "",
-            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent Msg:{COLOR_RESET}",
             last_msg_wrapped,
             "",
-            f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First Msg:{COLOR_RESET}",
             first_msg_wrapped,
             "",
             f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}     {COLOR_GRAY}{session.session_id}{COLOR_RESET}",
