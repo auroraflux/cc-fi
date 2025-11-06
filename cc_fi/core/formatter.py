@@ -46,11 +46,14 @@ def get_dynamic_column_widths() -> tuple[int, int]:
     except Exception:
         terminal_width = 120  # Fallback width
 
+    # Reserve space for fzf border (2 chars: 1 on each side) and some padding
+    usable_width = terminal_width - 4  # 2 for border, 2 for safety margin
+
     # Fixed column widths + separators (2 spaces between each = 8 total)
     fixed_width = PROJECT_COLUMN_WIDTH + PATH_COLUMN_WIDTH + TIME_COLUMN_WIDTH + 8
 
     # Remaining space for RECENT and FIRST columns
-    remaining = terminal_width - fixed_width
+    remaining = usable_width - fixed_width
 
     # Ensure minimum width
     if remaining < 40:
