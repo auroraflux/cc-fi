@@ -25,10 +25,14 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     """
     Build fzf input for interactive session selection.
 
-    Format: formatted_row_with_ansi ␟ session_id ␟ formatted_row_no_ansi ␟ full_content
+    Format: session_id|formatted_row_with_searchable_content
 
-    We append searchable content after the visible part, separated by a special char (␟).
-    The searchable content is made invisible using zero-width spaces and special formatting.
+    We use a two-column format:
+    - Column 1: session_id (hidden, for extraction)
+    - Column 2: formatted_row + hidden searchable content
+
+    The searchable content is appended invisibly to allow deep search
+    while maintaining clean display.
 
     @param sessions List of sessions to display
     @returns Newline-separated rows for fzf input
@@ -45,31 +49,31 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
     instruction_header = format_instruction_header()
     instruction_lines = instruction_header.split("\n")
 
-    # Use Unicode separator that won't appear in normal text
-    SEP = " ␟ "  # Unit separator with spaces for visibility
-
     rows = [
-        instruction_lines[0],
-        instruction_lines[1],
-        format_list_header(),
-        format_header_separator(),
+        f"INSTRUCTION1|{instruction_lines[0]}",
+        f"INSTRUCTION2|{instruction_lines[1]}",
+        f"HEADER|{format_list_header()}",
+        f"SEPARATOR|{format_header_separator()}",
     ]
 
     for session in sessions:
         formatted = format_list_row(session)
 
-        # Strip ANSI codes from formatted text to create plain searchable version
+        # Strip ANSI codes from formatted text for searchable version
         formatted_plain = re.sub(r'\x1b\[[0-9;]*m', '', formatted)
 
-        # Build searchable content
-        searchable_content = f"{session.session_id}{SEP}{formatted_plain}{SEP}{session.full_content}"
+        # Build searchable content (plain text + full content)
+        # Add unique markers to avoid false matches
+        searchable_content = f" SEARCH_START {formatted_plain} {session.full_content} SEARCH_END"
 
-        # Make searchable content invisible using zero-width spaces and dim color
-        # This allows searching while keeping display clean
+        # Make searchable content invisible using ANSI concealment
         invisible_searchable = f"\x1b[8m{searchable_content}\x1b[0m"
 
-        # Combine visible and invisible parts
-        row = f"{formatted}  {invisible_searchable}"
+        # Combine visible formatted text with invisible searchable text
+        display_content = f"{formatted}{invisible_searchable}"
+
+        # Build row: session_id|display_content
+        row = f"{session.session_id}|{display_content}"
         rows.append(row)
 
     return "\n".join(rows)
@@ -79,30 +83,14 @@ def extract_session_id_from_line(line: str) -> str:
     """
     Extract session ID from fzf input line.
 
-    @param line fzf input line with format: visible_part + invisible_searchable
-    @returns Session ID extracted from invisible part
+    @param line fzf input line with format: session_id|display_content
+    @returns Session ID (first field before pipe)
     @complexity O(1)
     @pure true
     """
-    import re
-
-    # Remove ANSI codes to find the content
-    plain = re.sub(r'\x1b\[[0-9;]*m', '', line)
-
-    # Look for the separator to find searchable content
-    SEP = " ␟ "
-
-    # Find the last occurrence of the visible content followed by separator
-    # Format is: visible_content SEP session_id SEP plain_text SEP full_content
-    parts = plain.rsplit(SEP, 3)  # Split from right, max 3 splits
-
-    if len(parts) >= 4:
-        # parts = [visible_content, session_id, plain_text, full_content]
-        # We want the session_id which is parts[1] when split from right,
-        # but since we used rsplit, it's parts[-3]
-        return parts[-3]
-
-    return ""
+    # Session ID is the first field before the pipe
+    parts = line.split("|", 1)
+    return parts[0] if parts else ""
 
 
 def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
@@ -126,13 +114,15 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
 
     # Build preview command that extracts session ID and passes search query
     # {q} is the current fzf query, {} is the selected line
-    # Session ID is extracted from the invisible part using the separator
-    preview_cmd = r"echo {} | python3 -c \"import sys, re; line = sys.stdin.read(); plain = re.sub(r'\\x1b\\[[0-9;]*m', '', line); parts = plain.split(' ␟ '); print(parts[-3] if len(parts) >= 3 else '')\" | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
+    # Session ID is the first field in pipe-delimited format
+    preview_cmd = "echo {} | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
 
     cmd = [
         "fzf",
         "--ansi",
         "--exact",  # Require exact substring match, not fuzzy matching
+        "--delimiter=|",
+        "--with-nth=2",  # Display only column 2 (formatted row + invisible searchable)
         "--header-lines=4",  # Skip instruction (2 lines) + column header + separator
         "--layout=reverse",
         f"--height={FZF_HEIGHT_PERCENT}%",
