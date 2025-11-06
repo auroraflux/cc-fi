@@ -33,6 +33,8 @@ BOILERPLATE_PATTERNS = [
     BoilerplatePattern("prefix", "<local-command-", case_sensitive=True),
     # OpenSpec system messages
     BoilerplatePattern("comment", "<!-- OPENSPEC:", case_sensitive=True),
+    # Interruption messages
+    BoilerplatePattern("prefix", "[request interrupted by user]", case_sensitive=False),
 ]
 
 

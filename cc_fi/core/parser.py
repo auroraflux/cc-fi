@@ -104,11 +104,11 @@ def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
 
 def parse_last_user_message(file_path: Path, max_lines: int) -> str:
     """
-    Parse last user message from JSONL file.
+    Parse last user message from JSONL file, skipping boilerplate.
 
     @param file_path Path to session file
     @param max_lines Maximum lines to read from end
-    @returns Last user message content
+    @returns Last user message content (empty if only boilerplate found)
     @complexity O(n) where n is max_lines
     @pure false - reads filesystem
     """
@@ -125,6 +125,11 @@ def parse_last_user_message(file_path: Path, max_lines: int) -> str:
             if data.get("type") == "user":
                 content = data.get("message", {}).get("content", "")
                 text = extract_text_from_content(content)
+
+                # Skip boilerplate messages
+                if is_boilerplate_message(text):
+                    continue
+
                 return text
         except json.JSONDecodeError:
             continue

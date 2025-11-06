@@ -53,6 +53,13 @@ def test_openspec_comments():
     assert is_boilerplate("<!-- OPENSPEC: some content -->")
 
 
+def test_interruption_messages():
+    """Test filtering request interrupted messages."""
+    assert is_boilerplate("[Request interrupted by user]")
+    assert is_boilerplate("[request interrupted by user]")
+    assert is_boilerplate("[REQUEST INTERRUPTED BY USER]")
+
+
 def test_not_boilerplate():
     """Test that normal user messages are not filtered."""
     assert not is_boilerplate("Normal user message")
@@ -90,7 +97,7 @@ def test_xml_tag_pattern_type():
 
 def test_boilerplate_pattern_registry():
     """Test that registry contains expected patterns."""
-    assert len(BOILERPLATE_PATTERNS) >= 8
+    assert len(BOILERPLATE_PATTERNS) >= 9
     pattern_types = {p.pattern_type for p in BOILERPLATE_PATTERNS}
     assert "prefix" in pattern_types
     assert "xml_tag" in pattern_types
