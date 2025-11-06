@@ -38,3 +38,9 @@ htmlcov/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Project-specific excludes
+openspec/
+CLAUDE.md
+guidelines.md
+.claude/commands/openspec/
