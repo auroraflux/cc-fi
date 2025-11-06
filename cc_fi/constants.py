@@ -52,7 +52,7 @@ FZF_PREVIEW_HEIGHT_PERCENT = 40  # Preview pane height (bottom position)
 FZF_HEIGHT_PERCENT = 100
 
 # Performance limits
-MAX_TAIL_LINES_FOR_LAST_MSG = 50
+MAX_TAIL_LINES_FOR_LAST_MSG = 200  # Increased for sessions with many tool results
 
 # Deduplication settings
 DEDUPLICATION_STRATEGY = "both"  # Options: "session_id", "fingerprint", "both", "none"
