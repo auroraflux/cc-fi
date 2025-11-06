@@ -89,7 +89,11 @@ def test_fzf_preview_colors_match_columns():
         COLOR_GRAY,
         COLOR_GREEN,
         COLOR_YELLOW,
-        ICON_BULLET,
+        ICON_PROJECT,
+        ICON_FOLDER,
+        ICON_CLOCK,
+        ICON_COMMENT,
+        ICON_BRANCH,
     )
     from cc_fi.core.formatter import format_fzf_preview
     from cc_fi.models.session import SessionData
@@ -109,26 +113,29 @@ def test_fzf_preview_colors_match_columns():
 
     result = format_fzf_preview(session)
 
-    # Check that headers are bold and color-matched with icons
+    # Check that headers are bold and color-matched with specific icons
     assert f"{COLOR_BOLD}{COLOR_GRAY}Session:" in result
-    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BULLET} Project:" in result
-    assert f"{COLOR_BOLD}{COLOR_BLUE}{ICON_BULLET} Path:" in result
-    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BULLET} Branch:" in result
-    assert f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_BULLET} Time:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} Messages:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} First:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} Recent:" in result
+    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:" in result
+    assert f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:" in result
+    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:" in result
+    assert f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} First:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Recent:" in result
 
 
 def test_list_header_has_icons_and_path():
     """Test that list headers have NerdFont icons and use PATH terminology."""
-    from cc_fi.constants import ICON_BULLET
+    from cc_fi.constants import ICON_PROJECT, ICON_FOLDER, ICON_CLOCK, ICON_COMMENT
     from cc_fi.core.formatter import format_list_header
 
     header = format_list_header()
 
-    # Check icons present
-    assert ICON_BULLET in header
+    # Check specific icons are present
+    assert ICON_PROJECT in header
+    assert ICON_FOLDER in header
+    assert ICON_CLOCK in header
+    assert ICON_COMMENT in header
 
     # Check terminology
     assert "PROJECT" in header

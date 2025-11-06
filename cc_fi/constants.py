@@ -30,7 +30,12 @@ COLOR_BOLD = "\033[1m"
 COLOR_RESET = "\033[0m"
 
 # NerdFont icons (requires NerdFont-patched terminal font)
-ICON_BULLET = ""  # U+F444 (nf-oct-dot_fill) - consistent bullet style
+ICON_PROJECT = ""  # U+EB30 (nf-cod-project)
+ICON_FOLDER = ""    # U+EA83 (nf-cod-folder)
+ICON_CLOCK = ""      # U+F017 (nf-fa-clock)
+ICON_COMMENT = ""  # U+EA6B (nf-cod-comment)
+ICON_BRANCH = ""    # U+E725 (nf-dev-git_branch)
+
 
 # FZF settings
 FZF_PREVIEW_HEIGHT_PERCENT = 40  # Preview pane height (bottom position)

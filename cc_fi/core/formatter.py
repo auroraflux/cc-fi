@@ -10,7 +10,11 @@ from cc_fi.constants import (
     COLOR_GREEN,
     COLOR_RESET,
     COLOR_YELLOW,
-    ICON_BULLET,
+    ICON_PROJECT,
+    ICON_FOLDER,
+    ICON_CLOCK,
+    ICON_COMMENT,
+    ICON_BRANCH,
     MESSAGE_DETAIL_LENGTH,
     MESSAGE_PREVIEW_LENGTH,
     MESSAGE_COLUMN_WIDTH,
@@ -120,12 +124,10 @@ def format_list_header() -> str:
     @complexity O(1)
     @pure true
     """
-    icon = ICON_BULLET
-
-    project = f"{icon} PROJECT".ljust(PROJECT_COLUMN_WIDTH)
-    path = f"{icon} PATH".ljust(PATH_COLUMN_WIDTH)
-    time_str = f"{icon} TIME".ljust(TIME_COLUMN_WIDTH)
-    message = f"{icon} FIRST MESSAGE"
+    project = f"{ICON_PROJECT} PROJECT".ljust(PROJECT_COLUMN_WIDTH)
+    path = f"{ICON_FOLDER} PATH".ljust(PATH_COLUMN_WIDTH)
+    time_str = f"{ICON_CLOCK} TIME".ljust(TIME_COLUMN_WIDTH)
+    message = f"{ICON_COMMENT} FIRST MESSAGE"
 
     return (
         f"{COLOR_BOLD}{COLOR_GREEN}{project}{COLOR_RESET}  "
@@ -182,7 +184,6 @@ def format_fzf_preview(session: SessionData) -> str:
     @complexity O(1)
     @pure true
     """
-    icon = ICON_BULLET
     short_path = shorten_path(session.cwd)
     time_str = format_timestamp(session.timestamp)
     first_msg = truncate_message(session.first_message, MESSAGE_DETAIL_LENGTH)
@@ -190,22 +191,22 @@ def format_fzf_preview(session: SessionData) -> str:
 
     lines = [
         f"{COLOR_BOLD}{COLOR_GRAY}Session:{COLOR_RESET}       {session.session_id}",
-        f"{COLOR_BOLD}{COLOR_GREEN}{icon} Project:{COLOR_RESET}     {session.project_name}",
-        f"{COLOR_BOLD}{COLOR_BLUE}{icon} Path:{COLOR_RESET}        {short_path}",
+        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {session.project_name}",
+        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {short_path}",
     ]
 
     if session.git_branch:
-        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{icon} Branch:{COLOR_RESET}      {session.git_branch}")
+        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {session.git_branch}")
 
     lines.extend(
         [
-            f"{COLOR_BOLD}{COLOR_YELLOW}{icon} Time:{COLOR_RESET}        {time_str}",
-            f"{COLOR_BOLD}{COLOR_GRAY}{icon} Messages:{COLOR_RESET}    {session.message_count}",
+            f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {time_str}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {session.message_count}",
             "",
-            f"{COLOR_BOLD}{COLOR_GRAY}{icon} First:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} First:{COLOR_RESET}",
             first_msg,
             "",
-            f"{COLOR_BOLD}{COLOR_GRAY}{icon} Recent:{COLOR_RESET}",
+            f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Recent:{COLOR_RESET}",
             last_msg,
         ]
     )
