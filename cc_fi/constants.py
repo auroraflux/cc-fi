@@ -15,6 +15,11 @@ SESSION_FILE_EXTENSION = ".jsonl"
 MESSAGE_PREVIEW_LENGTH = 60
 MESSAGE_DETAIL_LENGTH = 400  # Doubled from 200 for more preview content
 
+# Deep search match display
+MAX_PREVIEW_MATCHES = 5  # Maximum matches to show in preview pane
+MATCH_CONTEXT_CHARS = 50  # Characters before/after match to show as context
+MIN_MATCH_SPACING = 100  # Minimum characters between matches to avoid overlap
+
 # Display settings
 PROJECT_COLUMN_WIDTH = 20
 PATH_COLUMN_WIDTH = 40  # Reduced to fit RECENT column

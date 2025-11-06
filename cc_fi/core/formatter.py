@@ -286,13 +286,10 @@ def format_fzf_preview(session: SessionData) -> str:
     short_path = shorten_path(session.cwd)
     time_str = format_timestamp(session.timestamp)
 
-    # Truncate to max detail length, then wrap to terminal width
-    first_msg_truncated = truncate_message(session.first_message, MESSAGE_DETAIL_LENGTH)
-    last_msg_truncated = truncate_message(session.last_message, MESSAGE_DETAIL_LENGTH)
-
+    # Use full message fields (already truncated to 400 chars in parser)
     # Wrap the messages to terminal width with color
-    first_msg_wrapped = wrap_colored_text(first_msg_truncated, COLOR_LAVENDER, terminal_width)
-    last_msg_wrapped = wrap_colored_text(last_msg_truncated, COLOR_MAUVE, terminal_width)
+    first_msg_wrapped = wrap_colored_text(session.first_message_full, COLOR_LAVENDER, terminal_width)
+    last_msg_wrapped = wrap_colored_text(session.last_message_full, COLOR_MAUVE, terminal_width)
 
     # Start with project, path, time (matching table order)
     # Values are colored to match their header color for easy visual correlation
@@ -322,3 +319,170 @@ def format_fzf_preview(session: SessionData) -> str:
     )
 
     return "\n".join(lines)
+
+
+def find_search_matches(text: str, query: str) -> list[tuple[int, int]]:
+    """
+    Find all case-insensitive matches of query in text.
+
+    @param text Text to search in
+    @param query Search query
+    @returns List of (start, end) tuples for each match
+    @complexity O(n*m) where n is text length, m is query length
+    @pure true
+    """
+    if not query or not text:
+        return []
+
+    matches = []
+    query_lower = query.lower()
+    text_lower = text.lower()
+    start = 0
+
+    while True:
+        pos = text_lower.find(query_lower, start)
+        if pos == -1:
+            break
+        matches.append((pos, pos + len(query)))
+        start = pos + 1
+
+    return matches
+
+
+def extract_match_context(text: str, match_start: int, match_end: int, context_chars: int) -> str:
+    """
+    Extract context around a match with ellipsis if truncated.
+
+    @param text Full text
+    @param match_start Start position of match
+    @param match_end End position of match
+    @param context_chars Characters to show before/after match
+    @returns Formatted string with context
+    @complexity O(n) where n is context size
+    @pure true
+    """
+    # Calculate context boundaries
+    start = max(0, match_start - context_chars)
+    end = min(len(text), match_end + context_chars)
+
+    # Extract context
+    context = text[start:end]
+
+    # Add ellipsis if truncated
+    prefix = "..." if start > 0 else ""
+    suffix = "..." if end < len(text) else ""
+
+    return f"{prefix}{context}{suffix}"
+
+
+def format_search_preview(session: "SessionData", query: str) -> str:
+    """
+    Format preview pane with search-aware context showing matching snippets.
+
+    @param session SessionData to format
+    @param query Search query from fzf
+    @returns Multi-line formatted string with metadata and matches
+    @complexity O(n) where n is full_content length
+    @pure false - reads terminal size
+    """
+    from cc_fi.constants import (
+        MAX_PREVIEW_MATCHES,
+        MATCH_CONTEXT_CHARS,
+    )
+    from cc_fi.models.session import SessionData
+
+    try:
+        terminal_width = shutil.get_terminal_size().columns
+    except Exception:
+        terminal_width = 120
+
+    short_path = shorten_path(session.cwd)
+    time_str = format_timestamp(session.timestamp)
+
+    # Start with metadata (always shown)
+    lines = [
+        f"{COLOR_BOLD}{COLOR_GREEN}{ICON_PROJECT} Project:{COLOR_RESET}     {COLOR_GREEN}{session.project_name}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_BLUE}{ICON_FOLDER} Path:{COLOR_RESET}        {COLOR_BLUE}{short_path}{COLOR_RESET}",
+    ]
+
+    if session.git_branch:
+        lines.append(f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BRANCH} Branch:{COLOR_RESET}      {COLOR_GREEN}{session.git_branch}{COLOR_RESET}")
+
+    lines.extend([
+        f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_CLOCK} Time:{COLOR_RESET}        {COLOR_YELLOW}{time_str}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_GRAY}{ICON_SESSION} Session:{COLOR_RESET}     {COLOR_GRAY}{session.session_id}{COLOR_RESET}",
+        f"{COLOR_BOLD}{COLOR_GRAY}{ICON_COMMENT} Messages:{COLOR_RESET}    {COLOR_GRAY}{session.message_count}{COLOR_RESET}",
+        "",
+        f"{COLOR_OVERLAY0}{'─' * min(60, terminal_width)}{COLOR_RESET}",
+        "",
+    ])
+
+    # Search for matches in full_content
+    matches = find_search_matches(session.full_content, query)
+
+    if not matches:
+        # No deep matches found, show standard messages
+        lines.extend([
+            f"{COLOR_OVERLAY0}No deep matches found{COLOR_RESET}",
+            "",
+            f"{COLOR_BOLD}{COLOR_MAUVE}{ICON_RECENT} Recent Msg:{COLOR_RESET}",
+            wrap_colored_text(session.last_message_full, COLOR_MAUVE, terminal_width),
+            "",
+            f"{COLOR_BOLD}{COLOR_LAVENDER}{ICON_FIRST} First Msg:{COLOR_RESET}",
+            wrap_colored_text(session.first_message_full, COLOR_LAVENDER, terminal_width),
+        ])
+    else:
+        # Show matching snippets
+        total_matches = len(matches)
+        display_count = min(MAX_PREVIEW_MATCHES, total_matches)
+
+        if total_matches > MAX_PREVIEW_MATCHES:
+            lines.append(f"{COLOR_BOLD}{COLOR_CATPPUCCIN_BLUE} Matches ({total_matches} found, showing first {display_count}):{COLOR_RESET}")
+        else:
+            lines.append(f"{COLOR_BOLD}{COLOR_CATPPUCCIN_BLUE} Matches ({total_matches}):{COLOR_RESET}")
+
+        lines.append("")
+
+        # Show first N matches with context
+        for i, (start, end) in enumerate(matches[:MAX_PREVIEW_MATCHES]):
+            context = extract_match_context(session.full_content, start, end, MATCH_CONTEXT_CHARS)
+
+            # Wrap context to terminal width
+            wrapped = wrap_colored_text(context, COLOR_MAUVE, terminal_width - 15)
+
+            # Add match number prefix
+            first_line = wrapped.split("\n")[0] if "\n" in wrapped else wrapped
+            remaining_lines = "\n".join(wrapped.split("\n")[1:]) if "\n" in wrapped else ""
+
+            lines.append(f"{COLOR_BOLD}{COLOR_LAVENDER} [Match {i+1}]{COLOR_RESET} {first_line}")
+            if remaining_lines:
+                # Indent continuation lines
+                for line in remaining_lines.split("\n"):
+                    lines.append(f"          {line}")
+            lines.append("")
+
+        if total_matches > MAX_PREVIEW_MATCHES:
+            remaining = total_matches - MAX_PREVIEW_MATCHES
+            lines.append(f"{COLOR_OVERLAY0} ({remaining} more match{'es' if remaining > 1 else ''} not shown){COLOR_RESET}")
+
+    return "\n".join(lines)
+
+
+def format_preview_with_query(session: "SessionData", query: str = "") -> str:
+    """
+    Format preview pane, switching between standard and search mode.
+
+    @param session SessionData to format
+    @param query Optional search query from fzf
+    @returns Multi-line formatted preview string
+    @complexity O(n) where n is content size
+    @pure false - reads terminal size
+    """
+    from cc_fi.models.session import SessionData
+
+    if query and query.strip():
+        # Search mode: show matching snippets
+        return format_search_preview(session, query.strip())
+    else:
+        # Browse mode: show standard preview
+        return format_fzf_preview(session)

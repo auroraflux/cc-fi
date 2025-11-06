@@ -43,15 +43,17 @@ def print_sessions_list(sessions: list, show_header: bool = True) -> None:
         print(format_list_row(session))
 
 
-def handle_preview_mode(session_id: str) -> None:
+def handle_preview_mode(session_id: str, query: str = "") -> None:
     """
-    Handle --preview mode for fzf integration.
+    Handle --preview mode for fzf integration with optional search query.
 
     @param session_id Session ID to preview
+    @param query Optional search query from fzf
     @complexity O(n) where n is cached sessions
     @pure false - reads cache, writes to stdout
     """
     import logging
+    from cc_fi.core.formatter import format_preview_with_query
 
     logging.disable(logging.CRITICAL)
 
@@ -59,7 +61,7 @@ def handle_preview_mode(session_id: str) -> None:
     session = get_session_by_id(sessions, session_id)
 
     if session:
-        print(format_fzf_preview(session))
+        print(format_preview_with_query(session, query))
     else:
         print(f"Session not found: {session_id}")
 
@@ -165,6 +167,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--preview-query",
+        metavar="QUERY",
+        default="",
+        help=argparse.SUPPRESS,
+    )
+
+    parser.add_argument(
         "--clear-cache",
         action="store_true",
         help="Clear cache and exit",
@@ -193,7 +202,7 @@ def main() -> int:
             return 0
 
         if args.preview:
-            handle_preview_mode(args.preview)
+            handle_preview_mode(args.preview, args.preview_query)
             return 0
 
         if args.list:

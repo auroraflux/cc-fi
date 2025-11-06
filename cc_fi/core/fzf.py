@@ -23,14 +23,14 @@ def check_fzf_installed() -> bool:
 
 def build_fzf_input(sessions: list[SessionData]) -> str:
     """
-    Build fzf input with full conversation content for deep search.
+    Build fzf input for interactive session selection.
 
-    Format: session_id|visible_row\tfull_content
-    - Everything before \t is displayed in fzf
-    - Everything after \t is searchable but hidden (deep search)
+    Format: session_id|visible_row
+    - Search operates on visible columns only (fast, clean display)
+    - Deep search context shown in preview pane when query present
 
     @param sessions List of sessions to display
-    @returns Newline-separated rows with hidden searchable content
+    @returns Newline-separated rows for fzf input
     @complexity O(n) where n is number of sessions
     @pure true
     """
@@ -52,8 +52,8 @@ def build_fzf_input(sessions: list[SessionData]) -> str:
 
     for session in sessions:
         formatted = format_list_row(session)
-        # Append full_content after tab for deep search (hidden but searchable)
-        rows.append(f"{session.session_id}|{formatted}\t{session.full_content}")
+        # Clean single-line format (no hidden content)
+        rows.append(f"{session.session_id}|{formatted}")
 
     return "\n".join(rows)
 
@@ -89,8 +89,9 @@ def run_fzf_selection(sessions: list[SessionData]) -> SessionData | None:
     fzf_input = build_fzf_input(sessions)
     session_map = {s.session_id: s for s in sessions}
 
-    # Build preview command that extracts session ID and calls cc-fi
-    preview_cmd = "echo {} | cut -d'|' -f1 | xargs cc-fi --preview 2>/dev/null"
+    # Build preview command that extracts session ID and passes search query
+    # {q} is the current fzf query, {} is the selected line
+    preview_cmd = "echo {} | cut -d'|' -f1 | xargs -I % sh -c 'cc-fi --preview % --preview-query \"{q}\"' 2>/dev/null"
 
     cmd = [
         "fzf",

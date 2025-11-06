@@ -277,10 +277,16 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
     # Extract all user messages for deep search
     full_content = extract_all_user_messages(file_path)
 
-    # Truncate messages for display (full content is in full_content field)
-    from cc_fi.constants import MESSAGE_PREVIEW_LENGTH
+    # Create both truncated (for table) and full (for preview) versions
+    from cc_fi.constants import MESSAGE_PREVIEW_LENGTH, MESSAGE_DETAIL_LENGTH
+
+    # Table display: 60 char truncation
     first_msg_preview = first_msg[:MESSAGE_PREVIEW_LENGTH] if len(first_msg) > MESSAGE_PREVIEW_LENGTH else first_msg
     last_msg_preview = last_msg[:MESSAGE_PREVIEW_LENGTH] if len(last_msg) > MESSAGE_PREVIEW_LENGTH else last_msg
+
+    # Preview display: 400 char truncation
+    first_msg_full = first_msg[:MESSAGE_DETAIL_LENGTH] if len(first_msg) > MESSAGE_DETAIL_LENGTH else first_msg
+    last_msg_full = last_msg[:MESSAGE_DETAIL_LENGTH] if len(last_msg) > MESSAGE_DETAIL_LENGTH else last_msg
 
     return SessionData(
         session_id=session_id,
@@ -293,5 +299,7 @@ def extract_metadata_from_file(file_path: Path) -> "SessionData":
         message_count=msg_count,
         file_path=file_path,
         last_modified=last_modified,
+        first_message_full=first_msg_full,
+        last_message_full=last_msg_full,
         full_content=full_content,
     )

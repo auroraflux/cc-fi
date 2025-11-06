@@ -21,11 +21,13 @@ class SessionData:
     project_name: str
     git_branch: str
     timestamp: datetime
-    first_message: str
-    last_message: str
+    first_message: str  # Truncated (60 chars) for table display
+    last_message: str  # Truncated (60 chars) for table display
     message_count: int
     file_path: Path
     last_modified: float
+    first_message_full: str = ""  # Full text for preview (400 chars)
+    last_message_full: str = ""  # Full text for preview (400 chars)
     full_content: str = ""  # All user messages for deep search
 
     @property
@@ -85,6 +87,8 @@ class SessionData:
             "message_count": self.message_count,
             "file_path": str(self.file_path),
             "last_modified": self.last_modified,
+            "first_message_full": self.first_message_full,
+            "last_message_full": self.last_message_full,
             "full_content": self.full_content,
         }
 
@@ -112,5 +116,7 @@ class SessionData:
             message_count=data["message_count"],
             file_path=Path(data["file_path"]),
             last_modified=data["last_modified"],
+            first_message_full=data.get("first_message_full", ""),  # Backwards compatible
+            last_message_full=data.get("last_message_full", ""),  # Backwards compatible
             full_content=data.get("full_content", ""),  # Backwards compatible
         )
