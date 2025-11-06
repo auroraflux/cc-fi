@@ -83,7 +83,7 @@ def is_tool_result_message(data: dict) -> bool:
 
 def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
     """
-    Parse first real user message from JSONL file, skipping boilerplate.
+    Parse first real user message from JSONL file, skipping tool results and boilerplate.
 
     @param file_path Path to session file
     @returns Tuple of (first_user_data, message_content)
@@ -103,6 +103,10 @@ def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
             try:
                 data = json.loads(line)
                 if data.get("type") == "user":
+                    # Skip tool result messages
+                    if is_tool_result_message(data):
+                        continue
+
                     message = data.get("message", {})
                     content = message.get("content", "")
                     text = extract_text_from_content(content)
@@ -130,11 +134,11 @@ def parse_first_user_message(file_path: Path) -> tuple[dict, str]:
 
 def parse_last_user_message(file_path: Path, max_lines: int) -> str:
     """
-    Parse last user message from JSONL file, skipping boilerplate.
+    Parse last user message from JSONL file, skipping tool results and boilerplate.
 
     @param file_path Path to session file
     @param max_lines Maximum lines to read from end
-    @returns Last user message content (empty if only boilerplate found)
+    @returns Last user message content (empty if only tool results/boilerplate found)
     @complexity O(n) where n is max_lines
     @pure false - reads filesystem
     """
@@ -149,6 +153,10 @@ def parse_last_user_message(file_path: Path, max_lines: int) -> str:
         try:
             data = json.loads(line)
             if data.get("type") == "user":
+                # Skip tool result messages
+                if is_tool_result_message(data):
+                    continue
+
                 content = data.get("message", {}).get("content", "")
                 text = extract_text_from_content(content)
 
