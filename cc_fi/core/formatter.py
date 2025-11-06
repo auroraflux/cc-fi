@@ -6,10 +6,12 @@ from pathlib import Path
 from cc_fi.constants import (
     COLOR_BLUE,
     COLOR_BOLD,
+    COLOR_CATPPUCCIN_BLUE,
     COLOR_GRAY,
     COLOR_GREEN,
     COLOR_LAVENDER,
     COLOR_MAUVE,
+    COLOR_OVERLAY0,
     COLOR_RESET,
     COLOR_YELLOW,
     ICON_PROJECT,
@@ -178,13 +180,16 @@ def format_instruction_header() -> str:
     @complexity O(1)
     @pure true
     """
-    instructions = "Type to search | ↑↓ Navigate | ↵ Select | Esc Cancel"
-    separator = "─" * 80  # Full-width separator
-
-    return (
-        f"{COLOR_GRAY}{instructions}{COLOR_RESET}\n"
-        f"{COLOR_GRAY}{separator}{COLOR_RESET}"
+    # Instruction text with Catppuccin Blue highlights for key terms
+    instructions = (
+        f"{COLOR_OVERLAY0}Type to {COLOR_CATPPUCCIN_BLUE}search{COLOR_OVERLAY0} | "
+        f"↑↓ {COLOR_CATPPUCCIN_BLUE}Navigate{COLOR_OVERLAY0} | "
+        f"↵ {COLOR_CATPPUCCIN_BLUE}Select{COLOR_OVERLAY0} | "
+        f"Esc {COLOR_CATPPUCCIN_BLUE}Cancel{COLOR_RESET}"
     )
+    separator = f"{COLOR_OVERLAY0}{'─' * 80}{COLOR_RESET}"
+
+    return f"{instructions}\n{separator}"
 
 
 def format_fzf_preview(session: SessionData) -> str:

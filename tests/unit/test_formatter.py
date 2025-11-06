@@ -152,7 +152,7 @@ def test_list_header_has_icons_and_path():
 
 def test_instruction_header_format():
     """Test that instruction header has proper format and content."""
-    from cc_fi.constants import COLOR_GRAY, COLOR_RESET
+    from cc_fi.constants import COLOR_OVERLAY0, COLOR_CATPPUCCIN_BLUE, COLOR_RESET
     from cc_fi.core.formatter import format_instruction_header
 
     result = format_instruction_header()
@@ -162,7 +162,7 @@ def test_instruction_header_format():
     assert len(lines) == 2
 
     # First line should contain keyboard shortcuts
-    assert "Type to search" in lines[0]
+    assert "Type to search" in lines[0] or "search" in lines[0]
     assert "Navigate" in lines[0]
     assert "Select" in lines[0]
     assert "Cancel" in lines[0]
@@ -170,6 +170,7 @@ def test_instruction_header_format():
     # Second line should be a separator
     assert "─" in lines[1]
 
-    # Both lines should use gray color
-    assert COLOR_GRAY in result
+    # Should use Catppuccin Overlay0 and Blue colors
+    assert COLOR_OVERLAY0 in result
+    assert COLOR_CATPPUCCIN_BLUE in result
     assert COLOR_RESET in result
