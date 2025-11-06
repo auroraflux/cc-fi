@@ -188,6 +188,108 @@ cc-fi/
 └── README.md               # This file
 ```
 
+### Working with NerdFont Icons
+
+cc-fi uses NerdFont icons for visual consistency. Here's how to work with them properly:
+
+#### Icon Representation in Python
+
+NerdFont icons are stored as Unicode escape sequences in `cc_fi/constants.py`:
+
+```python
+ICON_PROJECT = "\ueb30"   # U+EB30 (nf-cod-project)
+ICON_FOLDER = "\uea83"    # U+EA83 (nf-cod-folder)
+ICON_CLOCK = "\uf017"     # U+F017 (nf-fa-clock)
+ICON_COMMENT = "\uea6b"   # U+EA6B (nf-cod-comment)
+ICON_BRANCH = "\ue725"    # U+E725 (nf-dev-git_branch)
+ICON_RECENT = "\uf27b"    # U+F27B (nf-fa-comment_dots)
+ICON_FIRST = "\uf0e0"     # U+F0E0 (nf-fa-envelope)
+ICON_SESSION = "\uf15c"   # U+F15C (nf-fa-file_text)
+```
+
+#### Format Conventions
+
+Each icon definition follows this pattern:
+```python
+ICON_NAME = "\uXXXX"  # U+XXXX (nf-category-name)
+```
+
+Where:
+- `\uXXXX` is the Python Unicode escape sequence (lowercase u, 4 hex digits)
+- `U+XXXX` in the comment is the Unicode code point (uppercase U+)
+- `nf-category-name` describes the icon's origin and name from NerdFonts
+
+#### Finding Icon Code Points
+
+1. **NerdFonts Cheat Sheet**: https://www.nerdfonts.com/cheat-sheet
+   - Search for the icon you want
+   - Look for the "Unicode" value (e.g., `U+F0E0`)
+   - Convert to Python format: `U+F0E0` → `\uf0e0`
+
+2. **Test rendering** before committing:
+   ```bash
+   python3 -c "print('\uf0e0')"  # Should show envelope icon
+   ```
+
+3. **Verify in terminal**: The icon should render as a single character, not:
+   - A box (□)
+   - Multiple dots or characters
+   - Question marks or other fallback symbols
+
+#### Common Issues and Solutions
+
+**Problem**: Icon displays as two dots or multiple characters
+- **Cause**: Some icons (like `U+EDEF` dice_one) render incorrectly in certain fonts
+- **Solution**: Choose a different icon from the NerdFonts cheat sheet
+- **Example**: Switched from `\uedef` (dice_one) to `\uf0e0` (envelope) for ICON_FIRST
+
+**Problem**: Icon shows as box (□)
+- **Cause**: Terminal font doesn't include NerdFont glyphs
+- **Solution**: Install a NerdFont-patched font:
+  ```bash
+  brew install --cask font-hack-nerd-font  # macOS
+  ```
+
+**Problem**: Icon width is inconsistent
+- **Cause**: NerdFonts are designed to be monospace-width
+- **Solution**: Use icons from the same category (all `nf-fa-*` or all `nf-cod-*`)
+
+#### Testing Icon Changes
+
+After modifying icons:
+
+1. **Visual test** - Run the tool and check appearance:
+   ```bash
+   python3 -m cc_fi.main | head -3
+   python3 -m cc_fi.main --preview <session-id>
+   ```
+
+2. **Check alignment** - Icons should align with their columns
+3. **Test in interactive mode** - `cc-fi -i` to see icons in fzf
+4. **Verify color rendering** - Icons inherit the color of their context
+
+#### Icon Selection Guidelines
+
+When choosing icons:
+- **Semantic meaning**: Icon should represent its function
+  - `` (folder) for paths
+  - `` (clock) for timestamps
+  - `` (comment) for messages
+  - `` (envelope) for first message
+
+- **Visual clarity**: Icon should be recognizable at terminal font size
+- **Category consistency**: Prefer icons from Font Awesome (`nf-fa-*`) or Codicons (`nf-cod-*`)
+- **Avoid problematic icons**: Some icons render as multiple glyphs (dots, dashes)
+  - Test thoroughly before committing
+  - If unsure, choose a simpler alternative
+
+#### Resources
+
+- [NerdFonts Official Site](https://www.nerdfonts.com/)
+- [NerdFonts Cheat Sheet](https://www.nerdfonts.com/cheat-sheet)
+- [Font Awesome Icons](https://fontawesome.com/icons)
+- [Codicons (VS Code Icons)](https://github.com/microsoft/vscode-codicons)
+
 ## Troubleshooting
 
 ### No sessions found
