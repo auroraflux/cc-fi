@@ -89,6 +89,7 @@ def test_fzf_preview_colors_match_columns():
         COLOR_GRAY,
         COLOR_GREEN,
         COLOR_YELLOW,
+        ICON_BULLET,
     )
     from cc_fi.core.formatter import format_fzf_preview
     from cc_fi.models.session import SessionData
@@ -108,12 +109,32 @@ def test_fzf_preview_colors_match_columns():
 
     result = format_fzf_preview(session)
 
-    # Check that headers are bold and color-matched
+    # Check that headers are bold and color-matched with icons
     assert f"{COLOR_BOLD}{COLOR_GRAY}Session:" in result
-    assert f"{COLOR_BOLD}{COLOR_GREEN}Project:" in result
-    assert f"{COLOR_BOLD}{COLOR_BLUE}Path:" in result
-    assert f"{COLOR_BOLD}{COLOR_GREEN}Branch:" in result
-    assert f"{COLOR_BOLD}{COLOR_YELLOW}Time:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}Messages:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}First:" in result
-    assert f"{COLOR_BOLD}{COLOR_GRAY}Recent:" in result
+    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BULLET} Project:" in result
+    assert f"{COLOR_BOLD}{COLOR_BLUE}{ICON_BULLET} Path:" in result
+    assert f"{COLOR_BOLD}{COLOR_GREEN}{ICON_BULLET} Branch:" in result
+    assert f"{COLOR_BOLD}{COLOR_YELLOW}{ICON_BULLET} Time:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} Messages:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} First:" in result
+    assert f"{COLOR_BOLD}{COLOR_GRAY}{ICON_BULLET} Recent:" in result
+
+
+def test_list_header_has_icons_and_path():
+    """Test that list headers have NerdFont icons and use PATH terminology."""
+    from cc_fi.constants import ICON_BULLET
+    from cc_fi.core.formatter import format_list_header
+
+    header = format_list_header()
+
+    # Check icons present
+    assert ICON_BULLET in header
+
+    # Check terminology
+    assert "PROJECT" in header
+    assert "PATH" in header
+    assert "TIME" in header
+    assert "FIRST MESSAGE" in header
+
+    # Ensure old DIRECTORY terminology is gone
+    assert "DIRECTORY" not in header

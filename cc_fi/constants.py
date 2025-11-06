@@ -29,6 +29,9 @@ COLOR_GRAY = "\033[90m"
 COLOR_BOLD = "\033[1m"
 COLOR_RESET = "\033[0m"
 
+# NerdFont icons (requires NerdFont-patched terminal font)
+ICON_BULLET = " "  # U+F444 (nf-oct-dot_fill) - consistent bullet style
+
 # FZF settings
 FZF_PREVIEW_WIDTH_PERCENT = 50
 FZF_HEIGHT_PERCENT = 100
