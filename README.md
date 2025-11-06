@@ -56,7 +56,8 @@ Shows all sessions sorted by last modified (newest first) with colored output:
 - Green: Project name
 - Blue: Directory path
 - Yellow: Timestamp
-- Gray: First message preview
+- Mauve (purple): Recent message preview
+- Lavender (light purple): First message preview
 
 ### Search Sessions
 
@@ -73,11 +74,11 @@ cc-fi -i
 ```
 
 Launches fzf with:
-- **Instruction header** showing keyboard shortcuts: "Type to search | ↑↓ Navigate | ↵ Select | Esc Cancel"
-- **Fixed column headers** with NerdFont icons: ` PROJECT`, ` PATH`, ` TIME`, ` FIRST MESSAGE`
+- **Instruction header** showing keyboard shortcuts with Catppuccin colors: "Type to search | ↑↓ Navigate | ↵ Select | Esc Cancel"
+- **Fixed column headers** with NerdFont icons: ` PROJECT`, ` PATH`, ` TIME`, ` RECENT`, ` FIRST`
 - **Newest sessions first** - starts at the top of the list
-- **Full-width columnar list** (60% height) with colored, aligned fields
-- **Bottom preview pane** (40% height) showing complete session details
+- **Full-width columnar list** (60% height) with Catppuccin-themed colors
+- **Bottom preview pane** (40% height) showing complete session details with color-matched labels
 - **Type to search**, **arrow keys** to navigate, **Enter** to select, **Esc** to cancel
 
 After selection, shows the resume command:
@@ -223,6 +224,26 @@ cc-fi uses NerdFont icons for visual consistency. If you see boxes (□) or miss
 2. Configure your terminal to use the NerdFont
 
 The tool remains fully functional without NerdFonts - icons are purely visual enhancements.
+
+### Colors look wrong or hard to read
+
+cc-fi uses the Catppuccin Mocha color palette for enhanced visual hierarchy:
+
+- **Mauve** (#c6a0f6): Recent messages - purple for creative/recent activity
+- **Lavender** (#b7bdf8): First messages - light purple for historical context
+- **Blue** (#8aadf4): Interactive highlights in instruction bar
+- **Overlay0** (#6e738d): Subtle UI chrome text
+
+**Best experience**: Use a terminal with Catppuccin theme (Mocha, Frappe, Macchiato, or Latte)
+- [Catppuccin for iTerm2](https://github.com/catppuccin/iterm)
+- [Catppuccin for other terminals](https://github.com/catppuccin/catppuccin)
+
+**Color support**:
+- 24-bit RGB terminals: Full Catppuccin colors (recommended)
+- 256-color terminals: Graceful fallback to nearest colors
+- 16-color terminals: Basic color fallback (purple → magenta)
+
+The tool remains fully functional on any terminal - colors enhance readability but aren't required.
 
 ## Design Philosophy
 
