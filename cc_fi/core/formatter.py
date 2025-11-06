@@ -56,11 +56,12 @@ def get_dynamic_column_widths() -> tuple[int, int]:
     if remaining < 40:
         return (30, 30)
 
-    # Split remaining space equally: RECENT and FIRST get 50% each
-    # This ensures first is never wider than recent
-    half_width = remaining // 2
-    recent_width = half_width
-    first_width = remaining - half_width - 2  # Subtract 2 for separator
+    # Split remaining space equally between RECENT and FIRST
+    # Account for 2-space separator between them
+    # Total: recent_width + 2 (separator) + first_width = remaining
+    available_for_columns = remaining - 2  # Reserve 2 for separator
+    recent_width = available_for_columns // 2
+    first_width = available_for_columns - recent_width  # Give any extra char to FIRST
 
     return (recent_width, first_width)
 
